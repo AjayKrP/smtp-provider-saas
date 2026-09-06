@@ -351,8 +351,20 @@ deploy_smtp_ingress() {
     if [[ "$(docker inspect -f '{{.State.Running}}' "$target_container" 2>/dev/null)" != "true" ]]; then
         echo "==> [smtp-ingress] FAILED after the swap - rolling back to $current immediately"
         docker logs --tail 80 "$target_container" || true
+        # Stop it explicitly rather than leave it to `restart: unless-stopped`,
+        # which would otherwise keep it crash-looping forever retrying the
+        # exact same port bind that just failed - confirmed live: this
+        # recreates the loop on every deploy attempt for as long as the
+        # ports stay held elsewhere (e.g. a pre-blue/green legacy container
+        # during bootstrap).
         docker compose -f "$COMPOSE_FILE" stop "$target_service" || true
         docker compose -f "$COMPOSE_FILE" up -d --no-deps "$old_service" || true
+
+        sleep 3
+        if [[ "$(docker inspect -f '{{.State.Running}}' "$old_container" 2>/dev/null)" != "true" ]]; then
+            echo "==> [smtp-ingress] Rollback ALSO failed to bind the ports - stopping it too rather than leaving another crash-restart loop. Whatever else is holding 587/465 (check for a legacy pre-blue/green container) needs to be dealt with before either slot can serve."
+            docker compose -f "$COMPOSE_FILE" stop "$old_service" || true
+        fi
         FAILED_ANY=true
         return
     fi
