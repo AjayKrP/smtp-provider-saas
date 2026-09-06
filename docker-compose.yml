@@ -1,0 +1,61 @@
+# Runs the stack on the external `mynet` network, reusing a Redis container that is
+# already running there (reachable as host `redis`). MongoDB is NOT run here — set
+# MONGO_URI in .env to your MongoDB Atlas connection string.
+#
+#   docker network create mynet                          # if it doesn't exist yet
+#   docker run -d --name redis --network mynet redis:7    # the shared Redis
+#
+#   docker compose up -d                        # infra only (maildev)
+#   docker compose --profile apps up -d --build # + api, smtp-ingress, worker, dashboard
+#
+# Only 4000/587/465/5173/1080 are published, so this coexists with other stacks.
+
+networks:
+  default:
+    name: mynet
+    external: true
+
+services:
+  # Local stand-in for recipient MX servers + webmail UI at http://localhost:1080
+  maildev:
+    image: maildev/maildev:2.1.0
+    restart: unless-stopped
+    ports:
+      - '1080:1080' # web UI only; SMTP 1025 stays internal to the network
+
+  # ---- Application services (opt in with `docker compose --profile apps up`) ----
+  api:
+    profiles: ['apps']
+    build: { context: ., dockerfile: Dockerfile, args: { APP: api } }
+    env_file: [.env] # MONGO_URI (Atlas) + all secrets come from here
+    environment:
+      REDIS_URL: redis://redis:6379
+    ports: ['4000:4000']
+
+  smtp-ingress:
+    profiles: ['apps']
+    build: { context: ., dockerfile: Dockerfile, args: { APP: smtp-ingress } }
+    env_file: [.env]
+    environment:
+      REDIS_URL: redis://redis:6379
+      SMTP_SUBMISSION_PORT: 587
+      SMTP_TLS_PORT: 465
+    ports: ['587:587', '465:465']
+
+  worker:
+    profiles: ['apps']
+    build: { context: ., dockerfile: Dockerfile, args: { APP: worker } }
+    env_file: [.env]
+    environment:
+      REDIS_URL: redis://redis:6379
+      # Deliver every message to maildev instead of doing real MX lookups.
+      DELIVERY_MX_OVERRIDE: maildev:1025
+      SMTP_HOSTNAME: mail.local.test
+      BOUNCE_DOMAIN: bounces.local.test
+    depends_on: [maildev]
+
+  dashboard:
+    profiles: ['apps']
+    build: { context: ., dockerfile: apps/dashboard/Dockerfile }
+    ports: ['5173:80']
+    depends_on: [api]

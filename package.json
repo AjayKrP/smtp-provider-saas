@@ -1,0 +1,41 @@
+{
+  "name": "smtp-provider-saas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "tsc -b packages/shared apps/api apps/smtp-ingress apps/worker",
+    "typecheck": "tsc -b packages/shared apps/api apps/smtp-ingress apps/worker && tsc -p tsconfig.test.json && npm run typecheck --workspace apps/dashboard",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "seed": "tsx --env-file-if-exists=.env apps/api/src/scripts/seed.ts",
+    "dev:api": "tsx watch --env-file-if-exists=.env apps/api/src/index.ts",
+    "dev:smtp": "tsx watch --env-file-if-exists=.env apps/smtp-ingress/src/index.ts",
+    "dev:worker": "tsx watch --env-file-if-exists=.env apps/worker/src/index.ts",
+    "dev:dashboard": "npm run dev --workspace apps/dashboard",
+    "dev:shared": "tsc -b packages/shared --watch --preserveWatchOutput",
+    "dev": "concurrently -n shared,api,smtp,worker,web -c gray,blue,green,magenta,cyan \"npm:dev:shared\" \"npm:dev:api\" \"npm:dev:smtp\" \"npm:dev:worker\" \"npm:dev:dashboard\"",
+    "infra:up": "docker compose up -d mongo redis maildev",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.17.0",
+    "mongodb-memory-server": "^10.1.4",
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.18.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  }
+}

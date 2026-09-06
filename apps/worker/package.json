@@ -1,0 +1,23 @@
+{
+  "name": "@smtp-saas/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@smtp-saas/shared": "*",
+    "bullmq": "^5.34.3",
+    "mailauth": "^5.0.2",
+    "nodemailer": "^9.0.6"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "mongodb-memory-server": "^10.1.4",
+    "smtp-server": "^3.19.4"
+  }
+}

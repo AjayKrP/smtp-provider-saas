@@ -1,0 +1,93 @@
+# Production stack for a single host that already runs nginx on 80/443 and a shared
+# `mynet` Docker network with a Redis container reachable as `redis`.
+#
+# Containers publish to 127.0.0.1 only; the host nginx vhost terminates TLS and
+# proxies to the dashboard container, which in turn proxies /api/ to the API.
+# The SMTP ingress is the exception — it binds 587/465 publicly, as it must.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# MongoDB is external (Atlas). Redis is external (already on mynet).
+
+networks:
+  default:
+    name: mynet
+    external: true
+
+# The Docker daemon on this host has no default log rotation and the disk runs
+# ~85% full, so every service caps its own json-file logs.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  api:
+    container_name: smtpsaas-api
+    build: { context: ., dockerfile: Dockerfile, args: { APP: api } }
+    restart: unless-stopped
+    env_file: [.env.production]
+    ports: ['127.0.0.1:4010:4000']
+    logging: *logging
+    stop_grace_period: 15s
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  dashboard:
+    container_name: smtpsaas-dashboard
+    build: { context: ., dockerfile: apps/dashboard/Dockerfile }
+    restart: unless-stopped
+    logging: *logging
+    ports: ['127.0.0.1:5175:80']
+    volumes:
+      - ./deploy/dashboard-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [api]
+
+  smtp-ingress:
+    container_name: smtpsaas-ingress
+    build: { context: ., dockerfile: Dockerfile, args: { APP: smtp-ingress } }
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      SMTP_SUBMISSION_PORT: 587
+      SMTP_TLS_PORT: 465
+      # Synced out of /etc/letsencrypt by deploy/sync-certs.sh so uid 1000 can read them.
+      SMTP_TLS_CERT_PATH: /certs/fullchain.pem
+      SMTP_TLS_KEY_PATH: /certs/privkey.pem
+    volumes:
+      - ./certs:/certs:ro
+    ports: ['587:587', '465:465']
+    logging: *logging
+    stop_grace_period: 15s
+
+  worker:
+    container_name: smtpsaas-worker
+    build: { context: ., dockerfile: Dockerfile, args: { APP: worker } }
+    restart: unless-stopped
+    env_file: [.env.production]
+    stop_grace_period: 15s
+    logging: *logging
+    depends_on: [maildev]
+
+  # Stands in for recipient MX servers: this host's outbound port 25 is blocked by the
+  # provider, so the worker delivers here instead (DELIVERY_MX_OVERRIDE=maildev:1025).
+  maildev:
+    container_name: smtpsaas-maildev
+    image: maildev/maildev:2.1.0
+    restart: unless-stopped
+    environment:
+      MAILDEV_WEB_PORT: 1080
+    # The image's own healthcheck hits `localhost`, which resolves to [::1] here while
+    # MailDev binds IPv4 only — it reports unhealthy while working fine. Pin to 127.0.0.1.
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:1080/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    ports: ['127.0.0.1:1080:1080']
+    logging: *logging
