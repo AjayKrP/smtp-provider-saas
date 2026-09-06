@@ -56,7 +56,6 @@ fi
 COMPOSE_FILE="docker-compose.prod.yml"
 STATE_DIR="$REPO_DIR/deploy/state"
 mkdir -p "$STATE_DIR"
-LAST_SHA_FILE="$STATE_DIR/last_deployed_sha"
 NETWORK="mynet"
 NGINX_SNIPPET="/etc/nginx/snippets/smtpsaas_active_dashboard.conf"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
@@ -71,38 +70,47 @@ DASHBOARD_HEALTH_CMD='wget -q -O- http://127.0.0.1:80/'
 
 NEW_SHA="$(git rev-parse HEAD)"
 
-if [[ -f "$LAST_SHA_FILE" ]]; then
-    OLD_SHA="$(cat "$LAST_SHA_FILE")"
-    CHANGED_FILES="$(git diff --name-only "$OLD_SHA" "$NEW_SHA" || true)"
-    echo "==> Diffing $OLD_SHA..$NEW_SHA"
-else
-    echo "==> No prior deploy recorded on this server - treating this as a first-time deploy of every service."
-    CHANGED_FILES="$(git ls-files)"
-fi
-
-echo "==> Changed paths:"
-echo "$CHANGED_FILES" | sed 's/^/    /'
-
-path_changed() {
-    # A pipe into `grep -q` would race `pipefail` on a large input (grep exits
-    # on first match while the writer can still be mid-write, causing a
-    # SIGPIPE that pipefail turns into a false failure) - hit this for real on
-    # the ondc-project deploy script. A here-string has no live pipe to race.
-    grep -q "^$1" <<< "$CHANGED_FILES"
-}
-
 # The Dockerfile COPYs packages/shared and the root lockfile/tsconfigs into
 # EVERY one of api/dashboard/smtp-ingress/worker's build, so a change to any
-# of those needs to redeploy all four, not just one.
-REDEPLOY_ALL=false
-for shared_prefix in "docker-compose.prod.yml" "Dockerfile" "package.json" "package-lock.json" \
-    "tsconfig.base.json" "tsconfig.json" "packages/shared/"; do
-    if path_changed "$shared_prefix"; then
-        echo "==> $shared_prefix changed - it's a build input for every service, redeploying all of them."
-        REDEPLOY_ALL=true
-        break
+# of those counts as "changed" for every service's own check below.
+SHARED_PREFIXES=("docker-compose.prod.yml" "Dockerfile" "package.json" "package-lock.json" \
+    "tsconfig.base.json" "tsconfig.json" "packages/shared/")
+
+# Tracks each service's own last successfully deployed commit, not one
+# shared marker. With a single shared marker, a persistently failing service
+# (e.g. smtp-ingress stuck behind a manual step - see deploy_smtp_ingress)
+# would force every OTHER service to keep doing a full redeploy on every
+# single push forever, since the marker can never advance while anything is
+# failing. Confirmed this for real: smtp-ingress failed on bootstrap and
+# every subsequent push kept redeploying api/dashboard/worker from scratch
+# even though nothing about them had changed.
+service_changed() {
+    local service_key="$1"; shift
+    local sha_file="$STATE_DIR/last_deployed_sha.${service_key}"
+    local changed_files
+    if [[ -f "$sha_file" ]]; then
+        changed_files="$(git diff --name-only "$(cat "$sha_file")" "$NEW_SHA" || true)"
+        echo "==> [$service_key] diffing $(cat "$sha_file")..$NEW_SHA"
+    else
+        echo "==> [$service_key] no prior successful deploy recorded - treating as changed."
+        changed_files="$(git ls-files)"
     fi
-done
+    local prefix
+    for prefix in "$@" "${SHARED_PREFIXES[@]}"; do
+        # here-string, not a pipe into grep -q: a large `git ls-files` diff
+        # can trigger a SIGPIPE/pipefail false-failure on the first (no
+        # marker yet) run if grep exits early on a live pipe - hit this for
+        # real on the ondc-project deploy script.
+        if grep -q "^$prefix" <<< "$changed_files"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+mark_deployed() {
+    echo "$NEW_SHA" > "$STATE_DIR/last_deployed_sha.$1"
+}
 
 DEPLOYED_ANY=false
 FAILED_ANY=false
@@ -163,6 +171,7 @@ deploy_alias_service() {
     # slot can keep claiming the alias forever, and a share of requests can
     # then resolve to a dead container.
     docker network disconnect "$NETWORK" "$old_container" 2>/dev/null || true
+    mark_deployed "$alias"
     DEPLOYED_ANY=true
 }
 
@@ -217,6 +226,7 @@ deploy_dashboard() {
     echo "$target_slot" > "$state_file"
     echo "==> [dashboard] traffic switched to $target_slot. Stopping old slot ($old_container)."
     docker compose -f "$COMPOSE_FILE" stop "$old_service" || true
+    mark_deployed "dashboard"
     DEPLOYED_ANY=true
 }
 
@@ -270,6 +280,7 @@ deploy_worker() {
     # interrupted mid-delivery.
     echo "==> [worker] $target_container healthy. Stopping old slot ($old_container)."
     docker compose -f "$COMPOSE_FILE" stop "$old_service" || true
+    mark_deployed "worker"
     DEPLOYED_ANY=true
 }
 
@@ -348,43 +359,39 @@ deploy_smtp_ingress() {
 
     echo "$target_slot" > "$state_file"
     echo "==> [smtp-ingress] traffic switched to $target_slot."
+    mark_deployed "smtp-ingress"
     DEPLOYED_ANY=true
 }
 
-if [[ "$REDEPLOY_ALL" == "true" ]] || path_changed "apps/api/"; then
+if service_changed "smtpsaas-api" "apps/api/"; then
     deploy_alias_service "smtpsaas-api" "api-blue" "api-green" \
         "smtpsaas_api_blue" "smtpsaas_api_green" "$API_HEALTH_CMD"
 fi
 
-if [[ "$REDEPLOY_ALL" == "true" ]] || path_changed "apps/dashboard/" || path_changed "deploy/dashboard-nginx.conf"; then
+if service_changed "dashboard" "apps/dashboard/" "deploy/dashboard-nginx.conf"; then
     deploy_dashboard
 fi
 
-if [[ "$REDEPLOY_ALL" == "true" ]] || path_changed "apps/smtp-ingress/"; then
+if service_changed "smtp-ingress" "apps/smtp-ingress/"; then
     deploy_smtp_ingress
 fi
 
-if [[ "$REDEPLOY_ALL" == "true" ]] || path_changed "apps/worker/"; then
+if service_changed "worker" "apps/worker/"; then
     deploy_worker
 fi
 
 # deploy/nginx-smtp.ajaykrp.me.conf is a reference copy - the live installed
 # file at /etc/nginx/sites-enabled/ has been rewritten by certbot to add the
 # TLS server block, so overwriting it automatically would destroy that.
-# Flag it for manual reconciliation instead.
-if path_changed "deploy/nginx-smtp.ajaykrp.me.conf"; then
+# Flag it for manual reconciliation instead. Its own marker only tracks
+# whether we've already warned about the current content, not a deploy.
+if service_changed "nginx-smtp-ref" "deploy/nginx-smtp.ajaykrp.me.conf"; then
     echo "==> deploy/nginx-smtp.ajaykrp.me.conf changed - this is a reference copy only (certbot has since rewritten the live file with the TLS block). Reconcile /etc/nginx/sites-enabled/smtp.ajaykrp.me.conf by hand."
+    mark_deployed "nginx-smtp-ref"
 fi
 
 if [[ "$DEPLOYED_ANY" == "false" && "$FAILED_ANY" == "false" ]]; then
     echo "==> No deployable changes detected. Nothing to do."
-fi
-
-# Only advance the "last deployed" marker on a fully clean run, so a failed
-# service's change gets retried on the next push instead of silently
-# dropping out of the diff once something else changes.
-if [[ "$FAILED_ANY" == "false" ]]; then
-    echo "$NEW_SHA" > "$LAST_SHA_FILE"
 fi
 
 # Same rationale as the other two projects on this shared host: this Docker
