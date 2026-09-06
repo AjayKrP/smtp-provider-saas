@@ -24,6 +24,16 @@
 # Run from the repo root on the server, after the target commit has already
 # been checked out (the GitHub Actions workflow does `git reset --hard` then
 # calls this script).
+#
+# Every `docker compose build`/`up`/`run` call below is deliberately `|| true`.
+# Hit this for real on the first live run: smtp-ingress's port swap failed
+# (the legacy pre-blue/green container was still holding 587/465 during
+# bootstrap) and, because that one `up` wasn't guarded, `set -e` killed the
+# whole script on the spot - skipping the rollback logic a few lines below it
+# entirely, and skipping the worker deploy that hadn't run yet either. Letting
+# these commands fail without exiting keeps control inside each function's own
+# health-check-timeout/rollback logic, which already handles "it didn't come
+# up" correctly.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -116,8 +126,8 @@ deploy_alias_service() {
     fi
 
     echo "==> [$alias] current=$current -> deploying $target_slot ($target_container)"
-    docker compose -f "$COMPOSE_FILE" build "$target_service"
-    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service"
+    docker compose -f "$COMPOSE_FILE" build "$target_service" || true
+    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service" || true
 
     echo "==> [$alias] waiting up to ${HEALTH_TIMEOUT}s for $target_container to report healthy"
     local elapsed=0 healthy=false
@@ -177,8 +187,8 @@ deploy_dashboard() {
     fi
 
     echo "==> [dashboard] current=$current -> deploying $target_slot ($target_container, port $target_port)"
-    docker compose -f "$COMPOSE_FILE" build "$target_service"
-    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service"
+    docker compose -f "$COMPOSE_FILE" build "$target_service" || true
+    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service" || true
 
     echo "==> [dashboard] waiting up to ${HEALTH_TIMEOUT}s for $target_container to report healthy"
     local elapsed=0 healthy=false
@@ -230,8 +240,8 @@ deploy_worker() {
     fi
 
     echo "==> [worker] current=$current -> deploying $target_slot ($target_container)"
-    docker compose -f "$COMPOSE_FILE" build "$target_service"
-    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service"
+    docker compose -f "$COMPOSE_FILE" build "$target_service" || true
+    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service" || true
 
     echo "==> [worker] waiting up to ${HEALTH_TIMEOUT}s for $target_container to log a clean startup"
     local elapsed=0 healthy=false
@@ -287,7 +297,7 @@ deploy_smtp_ingress() {
     fi
 
     echo "==> [smtp-ingress] current=$current -> deploying $target_slot ($target_container)"
-    docker compose -f "$COMPOSE_FILE" build "$target_service"
+    docker compose -f "$COMPOSE_FILE" build "$target_service" || true
     local image
     image="$(docker compose -f "$COMPOSE_FILE" config --images "$target_service")"
 
@@ -298,7 +308,7 @@ deploy_smtp_ingress() {
         -e SMTP_SUBMISSION_PORT=587 -e SMTP_TLS_PORT=465 \
         -e SMTP_TLS_CERT_PATH=/certs/fullchain.pem -e SMTP_TLS_KEY_PATH=/certs/privkey.pem \
         -v "$REPO_DIR/certs:/certs:ro" \
-        "$image" > /dev/null
+        "$image" > /dev/null || true
 
     echo "==> [smtp-ingress] validating new image in an unpublished container (up to ${HEALTH_TIMEOUT}s)"
     local elapsed=0 validated=false
@@ -324,14 +334,14 @@ deploy_smtp_ingress() {
 
     echo "==> [smtp-ingress] new image validated - swapping public ports now (brief gap; SMTP clients retry on refused connections)"
     docker compose -f "$COMPOSE_FILE" stop "$old_service" || true
-    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service"
+    docker compose -f "$COMPOSE_FILE" up -d --no-deps "$target_service" || true
 
     sleep 3
     if [[ "$(docker inspect -f '{{.State.Running}}' "$target_container" 2>/dev/null)" != "true" ]]; then
         echo "==> [smtp-ingress] FAILED after the swap - rolling back to $current immediately"
         docker logs --tail 80 "$target_container" || true
         docker compose -f "$COMPOSE_FILE" stop "$target_service" || true
-        docker compose -f "$COMPOSE_FILE" up -d --no-deps "$old_service"
+        docker compose -f "$COMPOSE_FILE" up -d --no-deps "$old_service" || true
         FAILED_ANY=true
         return
     fi
