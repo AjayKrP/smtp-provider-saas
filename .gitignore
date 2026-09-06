@@ -3,8 +3,12 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.env.production
 coverage/
 *.log
 .DS_Store
 apps/dashboard/dist/
 certs/
+
+# Blue/green deploy state - server-local runtime state, not versioned.
+deploy/state

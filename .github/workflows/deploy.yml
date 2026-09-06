@@ -1,0 +1,31 @@
+name: Deploy (change-based blue/green)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 15m
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/smtp-provider-saas
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x deploy/deploy.sh
+            ./deploy/deploy.sh
