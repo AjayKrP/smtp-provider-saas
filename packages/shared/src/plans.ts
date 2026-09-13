@@ -50,6 +50,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     maxCredentials: 25,
     maxMessageSizeBytes: 25 * 1024 * 1024,
     maxRecipientsPerMessage: 100,
+    stripeProductId: 'prod_VFfCN7aOVOa2z4',
   },
 ];
 
