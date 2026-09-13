@@ -59,7 +59,7 @@ export function PricingSection({ id }: { id?: string }) {
               to={p.requiresCheckout ? `/register?plan=${p.key}` : '/register'}
               className={`btn block${featured ? ' primary' : ''}`}
             >
-              {p.requiresCheckout ? `Get ${p.name}` : 'Start for free'}
+              {p.requiresCheckout ? `Choose ${p.name}` : 'Start for free'}
             </Link>
           )
         }

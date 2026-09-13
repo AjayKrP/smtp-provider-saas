@@ -145,7 +145,7 @@ export function Billing() {
                 ? 'Extend by 1 month'
                 : activePaidKey
                   ? `Switch to ${p.name}`
-                  : `Buy ${p.name}`;
+                  : `Choose ${p.name}`;
             return (
               <button
                 className={`block${featured || p.key === activePaidKey ? ' primary' : ''}`}
