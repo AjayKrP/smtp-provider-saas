@@ -21,6 +21,13 @@ beforeAll(async () => {
   mx = new SMTPServer({
     authOptional: true,
     disabledCommands: ['STARTTLS'],
+    onRcptTo(address, _session, cb) {
+      // Stand-in for a recipient server that permanently rejects this mailbox.
+      if (address.address.startsWith('no-such-user@')) {
+        return cb(Object.assign(new Error('5.1.1 No such user'), { responseCode: 550 }));
+      }
+      cb();
+    },
     onData(stream, _session, cb) {
       let data = '';
       stream.on('data', (c: Buffer) => (data += c.toString()));
@@ -134,5 +141,70 @@ describe('delivery pipeline', () => {
     expect(inbox).toHaveLength(1);
     expect(inbox[0]).toMatch(/DKIM-Signature:/i);
     expect(inbox[0]).toMatch(/d=acme\.test/);
+  });
+
+  it('sends bounce notices only to an envelope sender on a verified domain of the org', async () => {
+    const shared = await import('@smtp-saas/shared');
+    const { processDelivery } = await import('./processor.js');
+    const { generateDkimKeyPair, encryptString, OrganizationModel, DomainModel, MessageModel } =
+      shared;
+
+    const org = await OrganizationModel.create({
+      name: 'Bouncer',
+      ownerUserId: new mongoose.Types.ObjectId(),
+      planKey: 'free',
+    });
+    const { privateKey, publicKey } = generateDkimKeyPair();
+    await DomainModel.create({
+      organizationId: org._id,
+      domain: 'bouncer.test',
+      dkimSelector: 's1',
+      dkimPrivateKeyEnc: encryptString(privateKey),
+      dkimPublicKey: publicKey,
+      status: 'verified',
+      dkimVerified: true,
+    });
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db!, {
+      bucketName: 'raw_messages',
+    });
+
+    async function sendToMissingUser(envelopeFrom: string) {
+      const raw = Buffer.from(
+        'From: <hello@bouncer.test>\r\nTo: no-such-user@remote.test\r\nSubject: x\r\n\r\nbody\r\n',
+      );
+      const rawRef = await new Promise<mongoose.Types.ObjectId>((resolve, reject) => {
+        const up = bucket.openUploadStream('<b@bouncer.test>');
+        up.on('error', reject);
+        up.on('finish', () => resolve(up.id as mongoose.Types.ObjectId));
+        up.end(raw);
+      });
+      const message = await MessageModel.create({
+        organizationId: org._id,
+        credentialId: new mongoose.Types.ObjectId(),
+        messageId: `<${envelopeFrom}@bouncer.test>`,
+        from: 'hello@bouncer.test',
+        envelopeFrom,
+        to: [{ address: 'no-such-user@remote.test', status: 'queued' }],
+        subject: 'x',
+        sizeBytes: raw.length,
+        status: 'queued',
+        rawRef,
+      });
+      await processDelivery(fakeJob(message._id.toString(), org._id.toString()));
+      return MessageModel.findById(message._id).lean();
+    }
+
+    const dsnsTo = (address: string) =>
+      inbox.filter((m) => /Delivery Status Notification/.test(m) && m.includes(`To: ${address}`));
+
+    // MAIL FROM pointing at someone else: the recipient bounces, but no notice goes out.
+    const foreign = await sendToMissingUser('victim@elsewhere.test');
+    expect(foreign?.to[0]?.status).toBe('bounced');
+    expect(dsnsTo('victim@elsewhere.test')).toHaveLength(0);
+
+    // MAIL FROM on the customer's own verified domain: they get the notice.
+    const own = await sendToMissingUser('ops@bouncer.test');
+    expect(own?.to[0]?.status).toBe('bounced');
+    expect(dsnsTo('ops@bouncer.test')).toHaveLength(1);
   });
 });

@@ -77,7 +77,18 @@ async function applyResult(
         { upsert: true },
       );
     }
-    if (message.envelopeFrom) {
+    // The customer chooses MAIL FROM freely, so only send the failure notice to an
+    // address on one of their own verified domains — otherwise anyone could make us
+    // email bounce notices to a third party (backscatter).
+    const bounceDomain = message.envelopeFrom ? domainOf(message.envelopeFrom) : null;
+    const bounceToOwnDomain =
+      !!bounceDomain &&
+      !!(await DomainModel.exists({
+        organizationId: message.organizationId,
+        domain: bounceDomain,
+        status: 'verified',
+      }));
+    if (message.envelopeFrom && bounceToOwnDomain) {
       await sendBounce({
         to: message.envelopeFrom,
         originalRecipient: res.address,
