@@ -10,7 +10,7 @@ import { errorHandler } from './http/errors.js';
 import { authRouter } from './auth/routes.js';
 import { plansRouter } from './plans/routes.js';
 import { billingRouter } from './billing/routes.js';
-import { stripeWebhookRouter } from './billing/webhook.js';
+import { razorpayWebhookRouter } from './billing/webhook.js';
 import { domainsRouter } from './domains/routes.js';
 import { credentialsRouter } from './credentials/routes.js';
 import { messagesRouter } from './messages/routes.js';
@@ -23,8 +23,8 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(cors({ origin: env.DASHBOARD_URL, credentials: true }));
 
-  // Stripe webhook needs the raw body — mount before express.json().
-  app.use('/webhooks/stripe', stripeWebhookRouter);
+  // Razorpay signs the raw body — mount before express.json().
+  app.use('/webhooks/razorpay', razorpayWebhookRouter);
 
   app.use(express.json({ limit: '256kb' }));
   app.use(cookieParser());

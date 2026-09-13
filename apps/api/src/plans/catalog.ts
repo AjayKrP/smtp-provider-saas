@@ -1,68 +1,59 @@
 import { PLAN_DEFINITIONS, PlanModel, logger, type PlanDefinition } from '@smtp-saas/shared';
-import { stripe, stripeConfigured } from '../billing/stripe.js';
-import { pickPlanPrice, usable, type PlanPrice } from './pickPlanPrice.js';
+import { fetchItem, razorpayConfigured } from '../billing/razorpay.js';
 
-async function fetchPlanPrice(productId: string): Promise<PlanPrice | null> {
-  const product = await stripe.products.retrieve(productId, { expand: ['default_price'] });
-  if (!product.active) return null;
-  const defaultPrice = typeof product.default_price === 'object' ? product.default_price : null;
-  if (usable(defaultPrice)) return pickPlanPrice(defaultPrice, []);
-  const prices = await stripe.prices.list({ product: productId, active: true, limit: 100 });
-  return pickPlanPrice(null, prices.data);
-}
-
-const NO_PRICE = { stripePriceId: null, unitAmount: null, currency: null, interval: null };
+const NO_PRICE = { unitAmount: null, currency: null };
 
 async function syncPlan(def: PlanDefinition): Promise<void> {
-  const { stripeProductId, ...limits } = def;
-  // `priceUsd` is the pre-Stripe-pricing field; drop it from rows written by older seeds.
-  const unset = { priceUsd: 1 };
+  const { razorpayItemId, ...limits } = def;
+  // Fields left behind by the Stripe integration.
+  const unset = { stripeProductId: 1, stripePriceId: 1, interval: 1, priceUsd: 1 };
 
-  if (!stripeProductId) {
-    await PlanModel.updateOne(
-      { key: def.key },
-      { $set: { ...limits, stripeProductId: null, ...NO_PRICE, unitAmount: 0 }, $unset: unset },
-      { upsert: true, strict: false },
-    );
-    return;
-  }
-
-  // Limits always come from code, even if Stripe is unreachable right now.
+  // Limits always come from code, even if Razorpay is unreachable right now.
   await PlanModel.updateOne(
     { key: def.key },
-    { $set: { ...limits, stripeProductId }, $unset: unset },
+    {
+      $set: { ...limits, razorpayItemId: razorpayItemId ?? null, ...(def.paid ? {} : NO_PRICE) },
+      $unset: unset,
+    },
     { upsert: true, strict: false },
   );
-  if (!stripeConfigured) return;
+  if (!def.paid) return;
+
+  if (!razorpayItemId) {
+    await PlanModel.updateOne({ key: def.key }, { $set: NO_PRICE });
+    logger.warn({ plan: def.key }, 'paid plan has no razorpayItemId - it cannot be purchased');
+    return;
+  }
+  if (!razorpayConfigured) return;
 
   try {
-    const price = await fetchPlanPrice(stripeProductId);
-    await PlanModel.updateOne(
-      { key: def.key },
-      { $set: { ...(price ?? NO_PRICE), priceSyncedAt: new Date() } },
-    );
-    if (price) {
-      logger.info({ plan: def.key, ...price }, 'plan price synced from stripe');
+    const item = await fetchItem(razorpayItemId);
+    const price = item.active
+      ? { unitAmount: item.amount, currency: item.currency.toLowerCase() }
+      : NO_PRICE;
+    await PlanModel.updateOne({ key: def.key }, { $set: { ...price, priceSyncedAt: new Date() } });
+    if (item.active) {
+      logger.info({ plan: def.key, razorpayItemId, ...price }, 'plan price synced from razorpay');
     } else {
       logger.warn(
-        { plan: def.key, stripeProductId },
-        'stripe product has no active recurring price (or is archived) - plan cannot be purchased',
+        { plan: def.key, razorpayItemId },
+        'razorpay item is inactive - plan cannot be purchased',
       );
     }
   } catch (err) {
-    // Keep the last synced price rather than wiping it on a transient Stripe error.
-    logger.error({ err, plan: def.key, stripeProductId }, 'plan price sync from stripe failed');
+    // Keep the last synced price rather than wiping it on a transient Razorpay error.
+    logger.error({ err, plan: def.key, razorpayItemId }, 'plan price sync from razorpay failed');
   }
 }
 
 /**
- * Bring the `plans` collection in line with the code catalog (limits) and Stripe
- * (prices). Idempotent and never throws, so it is safe to call from startup, a
- * timer, webhooks and the seed script alike.
+ * Bring the `plans` collection in line with the code catalog (limits) and Razorpay
+ * Items (prices). Idempotent and never throws, so it is safe to call from startup, a
+ * timer and the seed script alike.
  */
 export async function syncPlanCatalog(): Promise<void> {
-  if (!stripeConfigured) {
-    logger.warn('STRIPE_SECRET_KEY is not a real key - plan prices were not synced from Stripe');
+  if (!razorpayConfigured) {
+    logger.warn('RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET not set - plan prices were not synced');
   }
   for (const def of PLAN_DEFINITIONS) {
     await syncPlan(def).catch((err: unknown) => {

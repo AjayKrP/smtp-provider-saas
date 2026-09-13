@@ -37,7 +37,7 @@ export function PlanCards({
     );
   }
 
-  // The free plan has no Stripe price; show it as zero in the paid plans' currency.
+  // The free plan has no Razorpay price; show it as zero in the paid plans' currency.
   const currency = plans.find((p) => p.price)?.price?.currency;
   const featured =
     featuredKey ?? (plans.length >= 3 ? plans[Math.floor(plans.length / 2)]?.key : undefined);

@@ -1,69 +1,102 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useCheckout, useMe, usePlans, usePortal, useUsage } from '../api/hooks.js';
+import { usePayments, usePlans, usePurchase, useSubscription, useUsage } from '../api/hooks.js';
 import { apiErrorMessage } from '../api/client.js';
+import { CheckoutDismissed } from '../api/razorpay.js';
 import { PlanCards } from '../components/PlanCards.js';
-import { PageHeader, StatusBadge } from '../components/bits.js';
+import { Empty, PageHeader, StatusBadge, day, money } from '../components/bits.js';
 
 export function Billing() {
   const plans = usePlans();
   const usage = useUsage();
-  const me = useMe();
-  const checkout = useCheckout();
-  const portal = usePortal();
+  const subscription = useSubscription();
+  const payments = usePayments();
+  const purchase = usePurchase();
   const [params] = useSearchParams();
-  const current = usage.data?.planKey;
-  const currentPrice = plans.data?.find((p) => p.key === current)?.price?.unitAmount ?? 0;
-  const result = params.get('checkout');
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function pick(planKey: string) {
-    try {
-      const { url } = await checkout.mutateAsync(planKey);
-      if (url) window.location.href = url;
-    } catch (err) {
-      alert(apiErrorMessage(err));
-    }
-  }
+  const sub = subscription.data;
+  const planName = (key: string | null | undefined) =>
+    plans.data?.find((p) => p.key === key)?.name ?? key ?? '—';
+  const activePaidKey = sub?.current ? sub.planKey : null;
+  const buying = purchase.isPending ? purchase.variables : null;
 
-  async function manage() {
+  async function buy(planKey: string) {
+    setNotice(null);
     try {
-      const { url } = await portal.mutateAsync();
-      if (url) window.location.href = url;
+      const result = await purchase.mutateAsync(planKey);
+      setNotice({
+        ok: true,
+        text: `Payment received — ${planName(result.planKey)} is active until ${day(result.currentPeriodEnd)}.`,
+      });
     } catch (err) {
-      alert(apiErrorMessage(err));
+      if (err instanceof CheckoutDismissed) return;
+      setNotice({ ok: false, text: apiErrorMessage(err) });
     }
   }
 
   return (
     <>
-      <PageHeader title="Billing" description="Choose the plan that fits your sending volume." />
+      <PageHeader
+        title="Billing"
+        description="Plans are prepaid one month at a time. Pay with UPI, cards, netbanking or wallets."
+      />
 
-      {result === 'success' && (
-        <div className="banner" style={{ background: 'var(--ok-soft)' }}>
-          Payment received — your new plan will be active in a moment.
+      {notice && (
+        <div
+          className={`banner${notice.ok ? '' : ' err'}`}
+          style={notice.ok ? { background: 'var(--ok-soft)' } : undefined}
+        >
+          {notice.text}
         </div>
-      )}
-      {result === 'cancelled' && (
-        <div className="banner">Checkout was cancelled. No changes were made.</div>
       )}
 
       <div className="card">
         <div className="card-head" style={{ marginBottom: 0 }}>
           <div>
-            <h2>
-              Current plan: {usage.data?.planName ?? '—'}{' '}
-              {usage.data && (
-                <StatusBadge status={usage.data.subscriptionActive ? 'active' : 'inactive'} />
-              )}
-            </h2>
-            <p>
-              {usage.data
-                ? `${usage.data.remaining.toLocaleString()} of ${usage.data.monthlyEmailQuota.toLocaleString()} emails remaining this month`
-                : 'Loading…'}
-            </p>
+            {sub?.current ? (
+              <>
+                <h2>
+                  {planName(sub.planKey)} plan <StatusBadge status="active" />
+                </h2>
+                <p>
+                  Paid until <strong>{day(sub.currentPeriodEnd)}</strong>
+                  {usage.data &&
+                    ` · ${usage.data.remaining.toLocaleString()} emails left this month`}
+                </p>
+              </>
+            ) : sub?.planKey ? (
+              <>
+                <h2>
+                  {planName(sub.planKey)} plan <span className="badge err">expired</span>
+                </h2>
+                <p>
+                  Ended on {day(sub.currentPeriodEnd)}. You&apos;re on the Free plan&apos;s limits
+                  until you renew.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Free plan</h2>
+                <p>
+                  {usage.data
+                    ? `${usage.data.remaining.toLocaleString()} of ${usage.data.monthlyEmailQuota.toLocaleString()} emails left this month`
+                    : 'Loading…'}
+                </p>
+              </>
+            )}
           </div>
-          {me.data?.organization?.stripeCustomerId && (
-            <button onClick={manage} disabled={portal.isPending}>
-              {portal.isPending ? 'Opening…' : 'Manage subscription'}
+          {sub?.planKey && (
+            <button
+              className={sub.current ? '' : 'primary'}
+              onClick={() => buy(sub.planKey!)}
+              disabled={purchase.isPending}
+            >
+              {buying === sub.planKey
+                ? 'Opening…'
+                : sub.current
+                  ? 'Extend by 1 month'
+                  : `Renew ${planName(sub.planKey)}`}
             </button>
           )}
         </div>
@@ -74,30 +107,85 @@ export function Billing() {
           plans={plans.data}
           loading={plans.isLoading}
           featuredKey={params.get('plan') ?? undefined}
-          action={(p, featured) =>
-            p.key === current ? (
-              <button className="block" disabled>
-                Current plan
-              </button>
-            ) : p.requiresCheckout ? (
+          action={(p, featured) => {
+            if (!p.requiresCheckout) {
+              return (
+                <button className="block" disabled>
+                  {activePaidKey ? 'Free tier' : 'Current plan'}
+                </button>
+              );
+            }
+            if (!p.price) {
+              return (
+                <button className="block" disabled>
+                  Unavailable
+                </button>
+              );
+            }
+            const label =
+              p.key === activePaidKey
+                ? 'Extend by 1 month'
+                : activePaidKey
+                  ? `Switch to ${p.name}`
+                  : `Buy ${p.name}`;
+            return (
               <button
-                className={`block${featured ? ' primary' : ''}`}
-                onClick={() => pick(p.key)}
-                disabled={checkout.isPending || !p.price}
+                className={`block${featured || p.key === activePaidKey ? ' primary' : ''}`}
+                onClick={() => buy(p.key)}
+                disabled={purchase.isPending}
               >
-                {!p.price
-                  ? 'Unavailable'
-                  : checkout.isPending && checkout.variables === p.key
-                    ? 'Redirecting…'
-                    : `${p.price.unitAmount > currentPrice ? 'Upgrade' : 'Switch'} to ${p.name}`}
+                {buying === p.key ? 'Opening…' : label}
               </button>
-            ) : (
-              <button className="block" disabled>
-                Free tier
-              </button>
-            )
-          }
+            );
+          }}
         />
+        <p className="muted small" style={{ marginTop: 14, textAlign: 'center' }}>
+          Each payment covers one month and never renews automatically. Paying for your current plan
+          adds a month to it; switching plans starts a new month today.
+        </p>
+      </div>
+
+      <div className="card flush" style={{ marginTop: 32 }}>
+        <div className="card-head">
+          <h2>Payment history</h2>
+        </div>
+        {payments.data?.length ? (
+          <div
+            className="table-wrap"
+            style={{ marginTop: 16, borderTop: '1px solid var(--border)' }}
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Paid on</th>
+                  <th>Plan</th>
+                  <th>Amount</th>
+                  <th>Covers</th>
+                  <th>Payment ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.data.map((p) => (
+                  <tr key={p.id}>
+                    <td>{day(p.paidAt)}</td>
+                    <td>{planName(p.planKey)}</td>
+                    <td className="num">{money(p.amount, p.currency, { exact: true })}</td>
+                    <td className="muted">
+                      {day(p.periodStart)} – {day(p.periodEnd)}
+                    </td>
+                    <td>
+                      <code>{p.razorpayPaymentId}</code>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty icon="card" title="No payments yet">
+            Payments you make will be listed here.
+          </Empty>
+        )}
       </div>
     </>
   );

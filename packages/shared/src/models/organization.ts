@@ -6,7 +6,6 @@ const organizationSchema = new Schema(
     ownerUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     // Denormalised current plan for fast quota checks on the SMTP hot path.
     planKey: { type: String, required: true, default: 'free' },
-    stripeCustomerId: { type: String, default: null, index: true },
   },
   { timestamps: true },
 );

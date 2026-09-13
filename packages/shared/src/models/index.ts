@@ -2,6 +2,7 @@ export * from './user.js';
 export * from './organization.js';
 export * from './plan.js';
 export * from './subscription.js';
+export * from './payment.js';
 export * from './domain.js';
 export * from './smtpCredential.js';
 export * from './message.js';

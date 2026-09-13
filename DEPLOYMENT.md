@@ -75,7 +75,8 @@ Set the full `.env` (see `.env.example`). Critical in production:
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | long random, distinct |
 | `SMTP_HOSTNAME` | must match PTR |
 | `BOUNCE_DOMAIN` | must have SPF + MX per §2 |
-| `STRIPE_WEBHOOK_SECRET` | from the live webhook endpoint |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | live keys; without them paid plans cannot be bought |
+| `RAZORPAY_WEBHOOK_SECRET` | from the `order.paid` webhook pointing at `/api/webhooks/razorpay` |
 | `DELIVERY_MX_OVERRIDE` | **must be empty** in production |
 | `WORKER_RATE_LIMIT_PER_SEC`, `WORKER_CONCURRENCY` | tune to your IP reputation |
 
@@ -100,9 +101,11 @@ Set the full `.env` (see `.env.example`). Critical in production:
 
 ## Verification checklist (end to end)
 
-1. `npm run seed` against production Mongo + real Stripe key.
-2. Register in the dashboard → pick a paid plan → complete Stripe Checkout (test mode) →
-   confirm `Subscription` row + `Organization.planKey` updated by the webhook.
+1. Razorpay Items exist for each paid plan and their ids are in `plans.ts`; `/api/plans`
+   shows their prices.
+2. Register in the dashboard → Billing → buy a paid plan in Razorpay Checkout (test mode)
+   → confirm the `Payment` row is `paid`, `Subscription.currentPeriodEnd` is a month out
+   and `Organization.planKey` changed.
 3. Add a domain you control, publish the DKIM (+ SPF) records, hit **Verify DNS**.
 4. Create SMTP credentials.
 5. Configure a mail client (e.g. Thunderbird) with the host/port/username/password,

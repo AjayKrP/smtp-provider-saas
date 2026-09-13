@@ -127,7 +127,6 @@ authRouter.get('/me', requireAuth, async (req, res) => {
       id: org._id,
       name: org.name,
       planKey: org.planKey,
-      stripeCustomerId: org.stripeCustomerId,
     },
   });
 });

@@ -42,11 +42,13 @@ export function Home() {
         description="Here’s how your sending looks this month."
       />
 
-      {u && !u.subscriptionActive && (
-        <div className="banner err">
-          <span>Your subscription is not active, so sending is paused.</span>
+      {u?.planExpired && (
+        <div className="banner">
+          <span>
+            Your paid plan has expired, so the Free plan&apos;s limits apply until you renew.
+          </span>
           <Link to="/billing" className="btn sm">
-            Update billing
+            Renew
           </Link>
         </div>
       )}
@@ -56,7 +58,7 @@ export function Home() {
           <div>
             <h2>
               {u?.planName ?? '—'} plan{' '}
-              {u && <StatusBadge status={u.subscriptionActive ? 'active' : 'inactive'} />}
+              {u && u.planKey !== 'free' && <StatusBadge status="active" />}
             </h2>
             <p>
               {u

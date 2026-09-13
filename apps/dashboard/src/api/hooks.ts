@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client.js';
+import { openCheckout, type CheckoutOrder } from './razorpay.js';
 
 export interface Me {
   id: string;
   email: string;
   name: string;
-  organization: { id: string; name: string; planKey: string; stripeCustomerId: string | null } | null;
+  organization: { id: string; name: string; planKey: string } | null;
 }
 
 export interface Plan {
@@ -16,7 +17,7 @@ export interface Plan {
   maxCredentials: number;
   maxRecipientsPerMessage: number;
   requiresCheckout: boolean;
-  /** From the plan's Stripe price; null for the free plan or a paid plan with no price. */
+  /** From the plan's Razorpay Item; null for the free plan or a paid plan with no price. */
   price: { unitAmount: number; currency: string; interval: string } | null;
 }
 
@@ -53,7 +54,8 @@ export interface Usage {
   period: string;
   planKey: string;
   planName: string;
-  subscriptionActive: boolean;
+  /** The organization's prepaid paid plan has run out; free limits apply. */
+  planExpired: boolean;
   monthlyEmailQuota: number;
   accepted: number;
   remaining: number;
@@ -142,15 +144,44 @@ export function useDeleteCredential() {
   });
 }
 
-export function useCheckout() {
-  return useMutation({
-    mutationFn: (planKey: string) =>
-      api.post<{ url: string }>('/billing/checkout-session', { planKey }).then((r) => r.data),
-  });
+export interface SubscriptionInfo {
+  planKey: string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  /** The prepaid period is still running. */
+  current: boolean;
 }
 
-export function usePortal() {
+export interface PaymentRecord {
+  id: string;
+  planKey: string;
+  amount: number;
+  currency: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  paidAt: string;
+  razorpayPaymentId: string | null;
+}
+
+export const useSubscription = () =>
+  useQuery({ queryKey: ['subscription'], queryFn: () => get<SubscriptionInfo>('/billing/subscription') });
+export const usePayments = () =>
+  useQuery({ queryKey: ['payments'], queryFn: () => get<PaymentRecord[]>('/billing/payments') });
+
+/** Create an order, take payment in Razorpay Checkout, then have the API verify it. */
+export function usePurchase() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post<{ url: string }>('/billing/portal-session').then((r) => r.data),
+    mutationFn: async (planKey: string) => {
+      const { data: order } = await api.post<CheckoutOrder>('/billing/checkout', { planKey });
+      const result = await openCheckout(order);
+      return api.post<SubscriptionInfo>('/billing/verify', result).then((r) => r.data);
+    },
+    onSettled: () =>
+      Promise.all(
+        ['usage', 'subscription', 'payments', 'me', 'plans'].map((key) =>
+          qc.invalidateQueries({ queryKey: [key] }),
+        ),
+      ),
   });
 }

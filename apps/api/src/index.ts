@@ -3,12 +3,12 @@ import { env } from './env.js';
 import { createApp } from './app.js';
 import { syncPlanCatalog } from './plans/catalog.js';
 
-// Safety net for price changes made in Stripe while no webhook reached us.
+// Picks up price changes made on the Razorpay Items (Razorpay sends no item webhooks).
 const PLAN_SYNC_INTERVAL_MS = 15 * 60_000;
 
 async function main(): Promise<void> {
   await connectMongo();
-  // Not awaited: a slow Stripe must not hold up startup and the deploy health check.
+  // Not awaited: a slow Razorpay must not hold up startup and the deploy health check.
   void syncPlanCatalog();
   const planSync = setInterval(() => void syncPlanCatalog(), PLAN_SYNC_INTERVAL_MS);
   planSync.unref();

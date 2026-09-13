@@ -9,4 +9,5 @@ export * from './email.js';
 export * from './smtpCodes.js';
 export * from './usage.js';
 export * from './planLimits.js';
+export * from './billingPeriod.js';
 export * from './models/index.js';

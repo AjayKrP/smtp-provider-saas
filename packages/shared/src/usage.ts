@@ -2,17 +2,19 @@ import { UsageCounterModel, currentPeriod } from './models/usageCounter.js';
 import { PlanModel } from './models/plan.js';
 import { OrganizationModel } from './models/organization.js';
 import { SubscriptionModel } from './models/subscription.js';
-import { SENDING_SUBSCRIPTION_STATUSES } from './types.js';
+import { effectivePlanKey } from './billingPeriod.js';
 import { planByKey } from './plans.js';
 import type { Types } from 'mongoose';
 
 export interface QuotaSnapshot {
+  /** Plan whose limits apply now — `free` once a prepaid paid plan has run out. */
   planKey: string;
+  /** True when the organization bought a paid plan whose period has ended. */
+  planExpired: boolean;
   monthlyEmailQuota: number;
   accepted: number;
   remaining: number;
   period: string;
-  subscriptionActive: boolean;
 }
 
 async function resolvePlanLimits(planKey: string): Promise<{ monthlyEmailQuota: number }> {
@@ -32,22 +34,18 @@ export async function getQuotaSnapshot(
     UsageCounterModel.findOne({ organizationId, period }).lean(),
   ]);
 
-  const planKey = org?.planKey ?? 'free';
+  const purchased = org?.planKey ?? 'free';
+  const planKey = effectivePlanKey(purchased, sub);
   const { monthlyEmailQuota } = await resolvePlanLimits(planKey);
   const accepted = counter?.accepted ?? 0;
 
-  // The free plan needs no subscription row; paid plans must be in a sending state.
-  const subscriptionActive =
-    planKey === 'free' ||
-    (!!sub && SENDING_SUBSCRIPTION_STATUSES.includes(sub.status));
-
   return {
     planKey,
+    planExpired: planKey !== purchased,
     monthlyEmailQuota,
     accepted,
     remaining: Math.max(0, monthlyEmailQuota - accepted),
     period,
-    subscriptionActive,
   };
 }
 

@@ -9,8 +9,12 @@ const FAQ = [
     a: 'Every recipient of a message accepted by our SMTP server counts as one email. Quotas reset at the start of each calendar month.',
   },
   {
+    q: 'How does billing work?',
+    a: 'Plans are prepaid one month at a time through Razorpay — pay with UPI, cards, netbanking or wallets. Nothing renews automatically: when a month ends you move to the Free limits until you pay again.',
+  },
+  {
     q: 'Can I change plans later?',
-    a: 'Yes. Upgrade from the Billing page at any time, and manage or cancel your subscription through the Stripe customer portal.',
+    a: 'Yes. Buy a different plan from the Billing page whenever you like and it starts right away. Paying for the plan you are already on adds another month to it.',
   },
   {
     q: 'What happens if I hit my monthly limit?',

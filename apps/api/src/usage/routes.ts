@@ -19,7 +19,7 @@ usageRouter.get('/current', async (req, res) => {
     period,
     planKey: snapshot.planKey,
     planName: limits.name,
-    subscriptionActive: snapshot.subscriptionActive,
+    planExpired: snapshot.planExpired,
     monthlyEmailQuota: snapshot.monthlyEmailQuota,
     accepted: snapshot.accepted,
     remaining: snapshot.remaining,

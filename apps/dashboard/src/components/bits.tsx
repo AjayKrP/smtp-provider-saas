@@ -198,7 +198,7 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${cls}`}>{status}</span>;
 }
 
-// Stripe amounts are in the currency's minor unit, except for these currencies.
+// Payment amounts are in the currency's minor unit, except for these currencies.
 const ZERO_DECIMAL = new Set([
   'bif',
   'clp',
@@ -218,7 +218,7 @@ const ZERO_DECIMAL = new Set([
   'xpf',
 ]);
 
-/** Format a Stripe minor-unit amount, e.g. (129900, 'inr') → "₹1,299". */
+/** Format a minor-unit amount (paise, cents), e.g. (129900, 'inr') → "₹1,299". */
 export function money(unitAmount: number, currency: string, { exact = false } = {}): string {
   const major = ZERO_DECIMAL.has(currency) ? unitAmount : unitAmount / 100;
   const whole = Number.isInteger(major) && !exact;
@@ -234,6 +234,12 @@ export function bytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+export function day(iso: string | null): string {
+  return iso
+    ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
 }
 
 export function when(iso: string | null): string {

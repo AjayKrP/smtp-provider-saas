@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
-import Stripe from 'stripe';
+import { RazorpayError } from '../billing/razorpay.js';
 import { logger } from '@smtp-saas/shared';
 
 export class ApiError extends Error {
@@ -30,11 +30,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(err.status).json({ error: err.code, message: err.message, details: err.details });
     return;
   }
-  if (err instanceof Stripe.errors.StripeError) {
-    // Surface Stripe's own explanation (account restrictions, missing prices, …)
+  if (err instanceof RazorpayError) {
+    // Surface Razorpay's own explanation (bad item id, account restrictions, …)
     // instead of a bare 500 - it is the actionable part.
-    logger.error({ err }, 'stripe request failed');
-    res.status(502).json({ error: 'payment_provider', message: `Stripe: ${err.message}` });
+    logger.error({ err, status: err.status, code: err.code }, 'razorpay request failed');
+    const status = err.status === 503 ? 503 : 502;
+    res.status(status).json({ error: 'payment_provider', message: `Razorpay: ${err.message}` });
     return;
   }
   logger.error({ err }, 'unhandled error');

@@ -9,7 +9,6 @@ import {
   domainOf,
   extractAddress,
   getEffectivePlan,
-  getQuotaSnapshot,
   logger,
   rawMessageBucket,
   reserveQuota,
@@ -69,9 +68,8 @@ export async function acceptMessage(
   const fromDomain = domainOf(fromAddress);
   if (!fromDomain) throw new SmtpError(550, 'Could not parse the From domain');
 
-  const [plan, quota, verifiedDomain] = await Promise.all([
+  const [plan, verifiedDomain] = await Promise.all([
     getEffectivePlan(user.organizationId),
-    getQuotaSnapshot(user.organizationId),
     DomainModel.findOne({
       organizationId: user.organizationId,
       domain: fromDomain,
@@ -81,9 +79,6 @@ export async function acceptMessage(
 
   if (!verifiedDomain) {
     throw new SmtpError(550, `${fromDomain} is not a verified sending domain for your account`);
-  }
-  if (!quota.subscriptionActive) {
-    throw new SmtpError(550, 'Your subscription is not active; update billing to resume sending');
   }
 
   const recipients = session.envelope.rcptTo.map((r) => r.address.toLowerCase());

@@ -1,73 +1,47 @@
 import { Router, raw } from 'express';
-import type Stripe from 'stripe';
 import { logger } from '@smtp-saas/shared';
-import { env } from '../env.js';
-import { markSubscriptionCanceled, stripe, syncSubscription } from './stripe.js';
-import { syncPlanCatalog } from '../plans/catalog.js';
+import { fulfillOrder } from './fulfill.js';
+import { verifyWebhookSignature } from './razorpay.js';
+
+interface RazorpayWebhook {
+  event: string;
+  payload: {
+    order?: { entity: { id: string } };
+    payment?: { entity: { id: string; order_id: string | null } };
+  };
+}
 
 /**
- * Mounted at /webhooks/stripe with a raw body parser (Stripe signature verification
- * needs the exact bytes). Must be registered before express.json().
+ * Mounted at /webhooks/razorpay with a raw body parser (the signature covers the exact
+ * bytes). Must be registered before express.json().
+ *
+ * Backstop for the checkout callback: if the customer closes the tab after paying,
+ * `order.paid` still credits the plan. The Razorpay account is shared with other
+ * sites, so orders we did not create are acknowledged and ignored.
  */
-export const stripeWebhookRouter: Router = Router();
+export const razorpayWebhookRouter: Router = Router();
 
-stripeWebhookRouter.post('/', raw({ type: 'application/json' }), async (req, res) => {
-  const signature = req.headers['stripe-signature'];
-  if (!signature) {
+razorpayWebhookRouter.post('/', raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-razorpay-signature'];
+  if (typeof signature !== 'string' || !Buffer.isBuffer(req.body)) {
     res.status(400).send('missing signature');
     return;
   }
-
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body as Buffer, signature, env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    logger.warn({ err }, 'stripe webhook signature verification failed');
+  if (!verifyWebhookSignature(req.body, signature)) {
+    logger.warn('razorpay webhook signature verification failed');
     res.status(400).send('invalid signature');
     return;
   }
 
+  const event = JSON.parse(req.body.toString('utf8')) as RazorpayWebhook;
   try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const s = event.data.object;
-        if (s.subscription) {
-          const sub = await stripe.subscriptions.retrieve(s.subscription as string);
-          await syncSubscription(sub);
-        }
-        break;
-      }
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-      case 'invoice.paid':
-      case 'invoice.payment_failed': {
-        const obj = event.data.object as Stripe.Subscription | Stripe.Invoice;
-        const subId =
-          'subscription' in obj && obj.subscription
-            ? (obj.subscription as string)
-            : (obj as Stripe.Subscription).id;
-        const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscription(sub);
-        break;
-      }
-      case 'customer.subscription.deleted': {
-        await markSubscriptionCanceled((event.data.object as Stripe.Subscription).id);
-        break;
-      }
-      case 'product.created':
-      case 'product.updated':
-      case 'product.deleted':
-      case 'price.created':
-      case 'price.updated':
-      case 'price.deleted': {
-        await syncPlanCatalog();
-        break;
-      }
-      default:
-        break;
+    if (event.event === 'order.paid' || event.event === 'payment.captured') {
+      const payment = event.payload.payment?.entity;
+      const orderId = event.payload.order?.entity.id ?? payment?.order_id;
+      if (orderId && payment) await fulfillOrder(orderId, payment.id);
     }
   } catch (err) {
-    logger.error({ err, type: event.type }, 'stripe webhook handler failed');
+    logger.error({ err, event: event.event }, 'razorpay webhook handler failed');
     res.status(500).send('handler error');
     return;
   }

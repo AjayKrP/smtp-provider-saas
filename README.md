@@ -2,8 +2,8 @@
 
 A subscription-based SMTP relay service. Customers are issued SMTP credentials, point
 their applications at the submission server, and the platform delivers their mail
-directly to recipient mail servers (direct MX delivery) with per-plan quotas billed
-through Stripe.
+directly to recipient mail servers (direct MX delivery) with per-plan quotas, prepaid
+monthly through Razorpay.
 
 > **Deliverability note.** Direct MX delivery from self-managed IPs needs operational
 > work this codebase cannot do for you: static IPv4 with matching PTR/rDNS, SPF for the
@@ -15,7 +15,7 @@ through Stripe.
 | Package | Role |
 | --- | --- |
 | `packages/shared` | Config (zod), Mongoose models, crypto (DKIM key encryption), quota logic, shared types |
-| `apps/api` | REST API for the dashboard: auth, Stripe billing + webhooks, domains/DKIM, credentials, message logs, usage |
+| `apps/api` | REST API for the dashboard: auth, Razorpay billing + webhooks, domains/DKIM, credentials, message logs, usage |
 | `apps/smtp-ingress` | `smtp-server` on 587 (STARTTLS) + 465 (TLS): authenticates customers, validates, stores raw MIME in GridFS, enqueues |
 | `apps/worker` | BullMQ consumer: DKIM-signs, resolves MX, delivers on port 25, retries with backoff, bounces, suppression, usage + events |
 | `apps/dashboard` | React + Vite SPA |
@@ -23,7 +23,7 @@ through Stripe.
 Data flow: **customer SMTP client → `smtp-ingress` → MongoDB (`Message` + GridFS) + Redis
 queue → `worker` → recipient MX**. The dashboard talks only to `apps/api`.
 
-Stack: Node 22, TypeScript, Express 5, MongoDB (Mongoose), Redis (BullMQ), Stripe,
+Stack: Node 22, TypeScript, Express 5, MongoDB (Mongoose), Redis (BullMQ), Razorpay,
 `smtp-server`, `nodemailer`, `mailauth` (DKIM). npm workspaces monorepo.
 
 ## Local development
@@ -34,7 +34,7 @@ Prerequisites: Node ≥ 22, Docker.
 cp .env.example .env          # then edit — see below
 npm install
 npm run infra:up              # mongo (single-node replica set), redis, maildev
-npm run seed                  # upsert plan catalog (+ Stripe products if STRIPE_SECRET_KEY is real)
+npm run seed                  # upsert plan catalog (+ prices from Razorpay Items if keys are set)
 npm run dev                   # shared (watch) + api + smtp-ingress + worker + dashboard
 ```
 
@@ -49,8 +49,8 @@ sends every message to MailDev instead of doing real MX lookups.
 
 `MONGO_URI`, `REDIS_URL`, `ENCRYPTION_KEY` (`openssl rand -base64 32`),
 `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `API_PUBLIC_URL`, `DASHBOARD_URL`,
-`SMTP_HOSTNAME`, `BOUNCE_DOMAIN`. Stripe keys can stay as placeholders until you test
-billing (the seed script then skips product creation and paid plans are unselectable).
+`SMTP_HOSTNAME`, `BOUNCE_DOMAIN`. Razorpay keys can stay unset until you test billing
+(paid plans then show as unavailable).
 
 > `POST /auth/register` uses a MongoDB transaction, so Mongo must run as a replica set.
 > `npm run infra:up` handles that; a plain `mongod` will not work.
@@ -68,14 +68,26 @@ a local capture SMTP server, then runs a message through DKIM signing and delive
 asserting the `Message` status, `MessageEvent`s, usage counters and the DKIM-Signature
 header on the received mail.
 
-## Stripe billing
+## Razorpay billing
 
-1. `STRIPE_SECRET_KEY` = your test secret key, then `npm run seed` to create a Product +
-   monthly Price per paid plan and write the price ids back to the `plans` collection.
-2. Forward webhooks in dev: `stripe listen --forward-to localhost:4000/webhooks/stripe`,
-   put the printed `whsec_...` in `STRIPE_WEBHOOK_SECRET`.
-3. The dashboard **Billing** page opens Stripe Checkout; `customer.subscription.*` and
-   `invoice.*` events reconcile `Subscription` + `Organization.planKey`.
+Plans are **prepaid one month at a time** with Razorpay Orders — nothing auto-renews.
+Paying for the running plan extends it by a month; buying another plan starts a new
+month now. When the period ends the organization falls back to the Free plan's limits.
+
+1. Set `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (test keys in dev).
+2. Prices live in Razorpay **Items** (amount + currency, e.g. INR). Create one Item per
+   paid plan and put its `item_…` id in `razorpayItemId` in `packages/shared/src/plans.ts`:
+   ```bash
+   curl -u "$RAZORPAY_KEY_ID:$RAZORPAY_KEY_SECRET" https://api.razorpay.com/v1/items \
+     -H 'Content-Type: application/json' \
+     -d '{"name":"Starter plan (1 month)","amount":59900,"currency":"INR"}'
+   ```
+   The API mirrors each Item's price into `plans` on startup and every 15 minutes, and
+   re-reads it at checkout, so a price change on the Item needs no deploy.
+3. Webhook: `POST {API}/webhooks/razorpay`, event `order.paid`, secret in
+   `RAZORPAY_WEBHOOK_SECRET`. The checkout callback already credits the payment; the
+   webhook is the backstop if the customer closes the tab. Orders from other sites on
+   the same Razorpay account are ignored.
 
 ## API surface (dashboard-facing)
 
@@ -83,9 +95,9 @@ header on the received mail.
 POST   /auth/register | /auth/login | /auth/refresh | /auth/logout
 GET    /auth/me
 GET    /plans
-POST   /billing/checkout-session | /billing/portal-session
-GET    /billing/subscription
-POST   /webhooks/stripe                      (raw body, Stripe-signed)
+POST   /billing/checkout | /billing/verify
+GET    /billing/subscription | /billing/payments
+POST   /webhooks/razorpay                    (raw body, Razorpay-signed)
 GET    /domains         POST /domains
 GET    /domains/:id     POST /domains/:id/verify     DELETE /domains/:id
 GET    /smtp-credentials   POST /smtp-credentials   DELETE /smtp-credentials/:id

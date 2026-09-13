@@ -4,18 +4,17 @@ const planSchema = new Schema(
   {
     key: { type: String, required: true, unique: true },
     name: { type: String, required: true },
+    paid: { type: Boolean, required: true, default: false },
     monthlyEmailQuota: { type: Number, required: true },
     maxDomains: { type: Number, required: true },
     maxCredentials: { type: Number, required: true },
     maxMessageSizeBytes: { type: Number, required: true },
     maxRecipientsPerMessage: { type: Number, required: true },
-    stripeProductId: { type: String, default: null },
-    // Mirrored from the product's Stripe price by the API's plan catalog sync —
-    // never edit by hand. unitAmount is in the currency's minor unit (paise, cents).
-    stripePriceId: { type: String, default: null },
+    razorpayItemId: { type: String, default: null },
+    // Mirrored from the Razorpay Item by the API's plan catalog sync — never edit by
+    // hand. unitAmount is in the currency's minor unit (paise).
     unitAmount: { type: Number, default: null },
     currency: { type: String, default: null },
-    interval: { type: String, default: null },
     priceSyncedAt: { type: Date, default: null },
   },
   { timestamps: true },

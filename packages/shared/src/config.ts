@@ -24,8 +24,11 @@ const apiSchema = sharedSchema.extend({
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL: z.coerce.number().int().positive().default(2_592_000),
-  STRIPE_SECRET_KEY: z.string().min(1),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Razorpay. Optional so the API still boots without them; billing endpoints then
+  // answer 503 and plan prices are simply not synced.
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   // Optional SPF include token the operator publishes for their sending IPs,
   // e.g. "_spf.mail.example.com". Shown to customers and checked during verification.
   MAIL_SPF_INCLUDE: z.string().optional(),

@@ -1,6 +1,6 @@
 /**
  * Idempotent seed: upserts the plan catalog limits and pulls each paid plan's price
- * from its Stripe product. The API does the same on every startup, so this is only
+ * from its Razorpay Item. The API does the same on every startup, so this is only
  * needed to refresh the database without restarting it.
  *
  *   npm run seed          (from repo root)
