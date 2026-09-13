@@ -1,40 +1,56 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
 import { useMe } from '../api/hooks.js';
+import { Icon, Logo, type IconName } from './bits.js';
 
-const links = [
-  ['/', 'Overview'],
-  ['/domains', 'Domains'],
-  ['/credentials', 'SMTP Credentials'],
-  ['/activity', 'Activity'],
-  ['/billing', 'Billing'],
-] as const;
+const links: [string, string, IconName][] = [
+  ['/', 'Overview', 'dashboard'],
+  ['/domains', 'Domains', 'globe'],
+  ['/credentials', 'SMTP credentials', 'key'],
+  ['/activity', 'Activity', 'activity'],
+  ['/billing', 'Billing', 'card'],
+];
 
 export function Layout() {
   const { logout } = useAuth();
   const { data: me } = useMe();
+  const initial = (me?.name || me?.email || '?').charAt(0).toUpperCase();
 
   return (
     <div className="app">
-      <nav className="sidebar">
-        <div className="brand">SMTP SaaS</div>
-        {links.map(([to, label]) => (
-          <NavLink key={to} to={to} end={to === '/'}>
-            {label}
-          </NavLink>
-        ))}
+      <aside className="sidebar">
+        <div className="brand">
+          <Logo />
+        </div>
+        <nav>
+          {links.map(([to, label, icon]) => (
+            <NavLink key={to} to={to} end={to === '/'} title={label}>
+              <Icon name={icon} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
         <div className="spacer" />
-        {me && (
-          <div className="muted" style={{ padding: '8px 12px', fontSize: 12 }}>
-            {me.email}
-            <br />
-            {me.organization?.name}
+        <div className="account">
+          <div className="avatar">{initial}</div>
+          <div className="who">
+            <div>{me?.name || me?.email}</div>
+            <div className="muted small">{me?.organization?.name}</div>
           </div>
-        )}
-        <button onClick={() => void logout()}>Sign out</button>
-      </nav>
+          <button
+            className="icon-btn"
+            title="Sign out"
+            aria-label="Sign out"
+            onClick={() => void logout()}
+          >
+            <Icon name="logout" />
+          </button>
+        </div>
+      </aside>
       <main className="main">
-        <Outlet />
+        <div className="container">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

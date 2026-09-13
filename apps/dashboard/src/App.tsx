@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext.js';
 import { Layout } from './components/Layout.js';
+import { PublicLayout } from './components/PublicLayout.js';
+import { Landing } from './pages/Landing.js';
+import { Pricing } from './pages/Pricing.js';
 import { Login } from './pages/Login.js';
 import { Register } from './pages/Register.js';
 import { Home } from './pages/Home.js';
@@ -15,6 +18,10 @@ export function App() {
   if (!authenticated) {
     return (
       <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/pricing" element={<Pricing />} />
+        </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -31,6 +38,7 @@ export function App() {
         <Route path="/activity" element={<Activity />} />
         <Route path="/billing" element={<Billing />} />
       </Route>
+      <Route path="/pricing" element={<Navigate to="/billing" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

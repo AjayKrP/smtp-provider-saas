@@ -1,12 +1,19 @@
-import { useCheckout, usePlans, usePortal, useUsage } from '../api/hooks.js';
+import { useSearchParams } from 'react-router-dom';
+import { useCheckout, useMe, usePlans, usePortal, useUsage } from '../api/hooks.js';
 import { apiErrorMessage } from '../api/client.js';
+import { PlanCards } from '../components/PlanCards.js';
+import { PageHeader, StatusBadge } from '../components/bits.js';
 
 export function Billing() {
   const plans = usePlans();
   const usage = useUsage();
+  const me = useMe();
   const checkout = useCheckout();
   const portal = usePortal();
+  const [params] = useSearchParams();
   const current = usage.data?.planKey;
+  const currentPrice = plans.data?.find((p) => p.key === current)?.priceUsd ?? 0;
+  const result = params.get('checkout');
 
   async function pick(planKey: string) {
     try {
@@ -28,45 +35,67 @@ export function Billing() {
 
   return (
     <>
-      <h1>Billing</h1>
+      <PageHeader title="Billing" description="Choose the plan that fits your sending volume." />
+
+      {result === 'success' && (
+        <div className="banner" style={{ background: 'var(--ok-soft)' }}>
+          Payment received — your new plan will be active in a moment.
+        </div>
+      )}
+      {result === 'cancelled' && (
+        <div className="banner">Checkout was cancelled. No changes were made.</div>
+      )}
 
       <div className="card">
-        <h2>Current plan</h2>
-        <p>
-          {usage.data?.planName ?? '—'} — {usage.data?.subscriptionActive ? 'active' : 'inactive'}
-        </p>
-        <button onClick={manage} disabled={portal.isPending}>
-          Manage subscription
-        </button>
+        <div className="card-head" style={{ marginBottom: 0 }}>
+          <div>
+            <h2>
+              Current plan: {usage.data?.planName ?? '—'}{' '}
+              {usage.data && (
+                <StatusBadge status={usage.data.subscriptionActive ? 'active' : 'inactive'} />
+              )}
+            </h2>
+            <p>
+              {usage.data
+                ? `${usage.data.remaining.toLocaleString()} of ${usage.data.monthlyEmailQuota.toLocaleString()} emails remaining this month`
+                : 'Loading…'}
+            </p>
+          </div>
+          {me.data?.organization?.stripeCustomerId && (
+            <button onClick={manage} disabled={portal.isPending}>
+              {portal.isPending ? 'Opening…' : 'Manage subscription'}
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="grid">
-        {plans.data?.map((p) => (
-          <div className="card" key={p.key} style={{ margin: 0 }}>
-            <h2>{p.name}</h2>
-            <p style={{ fontSize: 20 }}>
-              ${p.priceUsd}
-              <span className="muted" style={{ fontSize: 12 }}>
-                /mo
-              </span>
-            </p>
-            <ul className="muted" style={{ paddingLeft: 18, lineHeight: 1.8 }}>
-              <li>{p.monthlyEmailQuota.toLocaleString()} emails / month</li>
-              <li>{p.maxDomains} domains</li>
-              <li>{p.maxCredentials} SMTP credentials</li>
-              <li>{p.maxRecipientsPerMessage} recipients / message</li>
-            </ul>
-            {p.key === current ? (
-              <button disabled>Current</button>
+      <div style={{ marginTop: 32 }}>
+        <PlanCards
+          plans={plans.data}
+          loading={plans.isLoading}
+          featuredKey={params.get('plan') ?? undefined}
+          action={(p, featured) =>
+            p.key === current ? (
+              <button className="block" disabled>
+                Current plan
+              </button>
             ) : p.requiresCheckout ? (
-              <button className="primary" onClick={() => pick(p.key)} disabled={checkout.isPending}>
-                Choose {p.name}
+              <button
+                className={`block${featured ? ' primary' : ''}`}
+                onClick={() => pick(p.key)}
+                disabled={checkout.isPending}
+              >
+                {checkout.isPending && checkout.variables === p.key
+                  ? 'Redirecting…'
+                  : `${p.priceUsd > currentPrice ? 'Upgrade' : 'Switch'} to ${p.name}`}
               </button>
             ) : (
-              <button disabled>Free tier</button>
-            )}
-          </div>
-        ))}
+              <button className="block" disabled>
+                Free tier
+              </button>
+            )
+          }
+        />
       </div>
     </>
   );

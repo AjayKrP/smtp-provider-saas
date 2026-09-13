@@ -7,37 +7,55 @@ import {
   type Domain,
 } from '../api/hooks.js';
 import { apiErrorMessage } from '../api/client.js';
-import { StatusBadge, when } from '../components/bits.js';
+import { CopyButton, Empty, Icon, PageHeader, StatusBadge, when } from '../components/bits.js';
 
 function DnsTable({ domain }: { domain: Domain }) {
   return (
-    <table style={{ marginTop: 10 }}>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Host</th>
-          <th>Value</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        {domain.dnsRecords.map((r, i) => (
-          <tr key={i}>
-            <td>{r.type}</td>
-            <td>
-              <code>{r.host}</code>
-            </td>
-            <td style={{ maxWidth: 380, wordBreak: 'break-all' }}>
-              <code>{r.value}</code>
-              <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-                {r.purpose}
-              </div>
-            </td>
-            <td>{r.required ? <span className="badge warn">required</span> : ''}</td>
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Host</th>
+            <th>Value</th>
+            <th />
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {domain.dnsRecords.map((r, i) => (
+            <tr key={i}>
+              <td>
+                <span className="badge plain">{r.type}</span>
+              </td>
+              <td>
+                <div className="copy-field">
+                  <code>{r.host}</code>
+                  <CopyButton value={r.host} label="Copy host" />
+                </div>
+              </td>
+              <td style={{ maxWidth: 420 }}>
+                <div className="copy-field">
+                  <code>{r.value}</code>
+                  <CopyButton value={r.value} label="Copy value" />
+                </div>
+                <div className="muted small" style={{ marginTop: 4 }}>
+                  {r.purpose}
+                </div>
+              </td>
+              <td>{r.required ? <span className="badge warn plain">Required</span> : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Check({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span className={`badge ${ok ? 'ok' : 'warn'}`} style={{ textTransform: 'none' }}>
+      {label} {ok ? 'verified' : 'pending'}
+    </span>
   );
 }
 
@@ -47,20 +65,32 @@ function DomainCard({ domain }: { domain: Domain }) {
   const [msg, setMsg] = useState('');
 
   return (
-    <div className="card">
-      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <strong>{domain.domain}</strong>
-        <StatusBadge status={domain.status} />
+    <div className="card flush">
+      <div className="card-head">
+        <div>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {domain.domain} <StatusBadge status={domain.status} />
+          </h2>
+          <p>Last checked {when(domain.lastCheckedAt)}</p>
+        </div>
+        <div className="row">
+          <Check ok={domain.dkimVerified} label="DKIM" />
+          <Check ok={domain.spfVerified} label="SPF" />
+        </div>
       </div>
-      <p className="muted" style={{ fontSize: 12 }}>
-        DKIM {domain.dkimVerified ? '✓' : '✗'} · SPF {domain.spfVerified ? '✓' : '✗'} · last checked{' '}
-        {when(domain.lastCheckedAt)}
-      </p>
-      <DnsTable domain={domain} />
-      {msg && <div className="muted" style={{ marginTop: 8 }}>{msg}</div>}
-      <div className="row" style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 16, borderTop: '1px solid var(--border)' }}>
+        <DnsTable domain={domain} />
+      </div>
+      <div
+        className="row"
+        style={{
+          padding: '14px 20px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--panel-2)',
+        }}
+      >
         <button
-          className="primary"
+          className="primary sm"
           disabled={verify.isPending}
           onClick={async () => {
             setMsg('');
@@ -76,15 +106,18 @@ function DomainCard({ domain }: { domain: Domain }) {
             }
           }}
         >
+          <Icon name="refresh" size={14} />
           {verify.isPending ? 'Checking…' : 'Verify DNS'}
         </button>
         <button
+          className="sm danger"
           onClick={() => {
             if (confirm(`Remove ${domain.domain}?`)) del.mutate(domain.id);
           }}
         >
           Remove
         </button>
+        {msg && <span className="muted small">{msg}</span>}
       </div>
     </div>
   );
@@ -109,29 +142,40 @@ export function Domains() {
 
   return (
     <>
-      <h1>Sending domains</h1>
+      <PageHeader
+        title="Sending domains"
+        description="Verify the domains you send from so mail is DKIM-signed and trusted by inboxes."
+      />
+
       <form className="card" onSubmit={submit}>
-        <h2>Add a domain</h2>
-        <div className="row" style={{ alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label>Domain</label>
-            <input
-              placeholder="mail.yourcompany.com"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              required
-            />
-          </div>
+        <div className="row">
+          <input
+            style={{ flex: 1, minWidth: 200 }}
+            placeholder="yourcompany.com"
+            aria-label="Domain"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            required
+          />
           <button className="primary" disabled={add.isPending}>
-            Add
+            <Icon name="plus" size={15} />
+            {add.isPending ? 'Adding…' : 'Add domain'}
           </button>
         </div>
         {error && <div className="error">{error}</div>}
       </form>
 
       {isLoading && <p className="muted">Loading…</p>}
-      {data?.length === 0 && <p className="muted">No domains yet.</p>}
-      {data?.map((d) => <DomainCard key={d.id} domain={d} />)}
+      {data?.length === 0 && (
+        <div className="card">
+          <Empty icon="globe" title="No domains yet">
+            Add your first domain above to get DNS records to publish.
+          </Empty>
+        </div>
+      )}
+      {data?.map((d) => (
+        <DomainCard key={d.id} domain={d} />
+      ))}
     </>
   );
 }
