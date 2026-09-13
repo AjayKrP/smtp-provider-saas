@@ -18,7 +18,12 @@ import { usageRouter } from './usage/routes.js';
 
 export function createApp(): Express {
   const app = express();
-  app.set('trust proxy', 1);
+  // Production path is browser -> host nginx -> dashboard nginx -> api: two proxies,
+  // each appending to X-Forwarded-For. Trusting only one hop made every request look
+  // like it came from the host nginx's Docker IP, so all visitors shared one rate-limit
+  // bucket (anyone could lock everyone out of login). Client-supplied XFF entries sit
+  // left of the trusted hops and are ignored.
+  app.set('trust proxy', 2);
   app.use(pinoHttp({ logger }));
   app.use(helmet());
   app.use(cors({ origin: env.DASHBOARD_URL, credentials: true }));

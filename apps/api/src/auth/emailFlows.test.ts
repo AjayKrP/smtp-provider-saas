@@ -78,6 +78,30 @@ describe('email verification', () => {
     expect(sent[0]!.text).toContain('http://app.test/verify-email?token=');
   });
 
+  it('answers a duplicate signup exactly like a new one and emails the owner instead', async () => {
+    const first = await request(app).post('/auth/register').send(account).expect(201);
+    await request(app)
+      .post('/auth/verify-email')
+      .send({ token: linkToken(sent[0]!) })
+      .expect(200);
+
+    const again = await request(app)
+      .post('/auth/register')
+      .send({ ...account, password: 'an-attackers-password', name: 'Mallory' })
+      .expect(201);
+    expect(again.body).toEqual(first.body);
+    expect(sent.at(-1)!.subject).toMatch(/already have/i);
+    expect(sent.at(-1)!.text).toContain('http://app.test/reset-password?token=');
+
+    // The existing account is untouched.
+    await request(app).post('/auth/login').send(account).expect(200);
+    await request(app)
+      .post('/auth/login')
+      .send({ ...account, password: 'an-attackers-password' })
+      .expect(401);
+    expect(await models.UserModel.countDocuments({ email: 'ada@example.com' })).toBe(1);
+  });
+
   it('refuses login until verified, but only after a correct password', async () => {
     await request(app).post('/auth/register').send(account).expect(201);
     await request(app)
@@ -201,5 +225,34 @@ describe('existing accounts', () => {
     const fresh = await models.UserModel.findOne({ email: 'ada@example.com' }).lean();
     expect(old?.emailVerifiedAt?.toISOString()).toBe(createdAt.toISOString());
     expect(fresh?.emailVerifiedAt).toBeNull();
+  });
+});
+
+describe('rate limiting', () => {
+  it('keys the auth limiter on the real client behind both proxies, not the proxy IP', async () => {
+    // What production traffic looks like after host nginx and dashboard nginx.
+    const via = (client: string) => ({ 'X-Forwarded-For': `${client}, 172.18.0.1` });
+    const remaining = async (client: string) =>
+      Number(
+        (
+          await request(app)
+            .post('/auth/forgot-password')
+            .set(via(client))
+            .send({ email: 'nobody@example.com' })
+        ).headers['ratelimit-remaining'],
+      );
+
+    const a1 = await remaining('203.0.113.10');
+    const a2 = await remaining('203.0.113.10');
+    const b1 = await remaining('198.51.100.20');
+    expect(a2).toBe(a1 - 1);
+    expect(b1).toBe(a1); // a different client has its own, untouched bucket
+
+    // A spoofed XFF entry from the client itself is ignored.
+    const spoofed = await request(app)
+      .post('/auth/forgot-password')
+      .set('X-Forwarded-For', '9.9.9.9, 203.0.113.10, 172.18.0.1')
+      .send({ email: 'nobody@example.com' });
+    expect(Number(spoofed.headers['ratelimit-remaining'])).toBe(a2 - 1);
   });
 });
