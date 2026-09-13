@@ -18,8 +18,10 @@ billingRouter.post('/checkout-session', validateBody(checkoutSchema), async (req
 
   const plan = await PlanModel.findOne({ key: planKey }).lean();
   if (!plan) throw ApiError.notFound('Unknown plan');
-  if (plan.priceUsd === 0) throw ApiError.badRequest('The free plan does not require checkout');
-  if (!plan.stripePriceId) throw ApiError.badRequest('Plan is not linked to a Stripe price; run the seed script');
+  if (!plan.stripeProductId) throw ApiError.badRequest('The free plan does not require checkout');
+  if (!plan.stripePriceId) {
+    throw ApiError.badRequest('This plan has no active recurring price in Stripe yet');
+  }
 
   const customerId = await ensureStripeCustomer(organizationId);
   const session = await stripe.checkout.sessions.create({

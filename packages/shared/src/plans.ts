@@ -1,21 +1,20 @@
 /**
- * Canonical plan catalog. `npm run seed` upserts these into the `plans` collection
- * and (when Stripe keys are configured) ensures a matching Stripe Product + Price,
- * writing the price id back to `stripePriceId`.
+ * Canonical plan catalog: limits live here, prices live in Stripe.
+ *
+ * The API upserts these into the `plans` collection on startup (and `npm run seed`
+ * does the same on demand), then reads each paid plan's price — amount, currency,
+ * interval — from its Stripe product's default price. Change a price in the Stripe
+ * dashboard, not here.
  */
 export interface PlanDefinition {
   key: string;
   name: string;
-  priceUsd: number;
   monthlyEmailQuota: number;
   maxDomains: number;
   maxCredentials: number;
   maxMessageSizeBytes: number;
   maxRecipientsPerMessage: number;
-  /**
-   * Existing Stripe product to bill this plan under. When unset, the seed finds or
-   * creates a product tagged with `metadata.planKey`.
-   */
+  /** Stripe product this plan is billed under. Absent means the plan is free. */
   stripeProductId?: string;
 }
 
@@ -23,7 +22,6 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     key: 'free',
     name: 'Free',
-    priceUsd: 0,
     monthlyEmailQuota: 500,
     maxDomains: 1,
     maxCredentials: 1,
@@ -33,7 +31,6 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     key: 'starter',
     name: 'Starter',
-    priceUsd: 15,
     monthlyEmailQuota: 50_000,
     maxDomains: 3,
     maxCredentials: 5,
@@ -44,7 +41,6 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     key: 'growth',
     name: 'Growth',
-    priceUsd: 75,
     monthlyEmailQuota: 500_000,
     maxDomains: 10,
     maxCredentials: 25,

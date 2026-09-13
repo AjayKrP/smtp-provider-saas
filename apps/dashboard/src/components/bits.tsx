@@ -198,6 +198,38 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${cls}`}>{status}</span>;
 }
 
+// Stripe amounts are in the currency's minor unit, except for these currencies.
+const ZERO_DECIMAL = new Set([
+  'bif',
+  'clp',
+  'djf',
+  'gnf',
+  'jpy',
+  'kmf',
+  'krw',
+  'mga',
+  'pyg',
+  'rwf',
+  'ugx',
+  'vnd',
+  'vuv',
+  'xaf',
+  'xof',
+  'xpf',
+]);
+
+/** Format a Stripe minor-unit amount, e.g. (129900, 'inr') → "₹1,299". */
+export function money(unitAmount: number, currency: string, { exact = false } = {}): string {
+  const major = ZERO_DECIMAL.has(currency) ? unitAmount : unitAmount / 100;
+  const whole = Number.isInteger(major) && !exact;
+  return new Intl.NumberFormat(currency === 'inr' ? 'en-IN' : undefined, {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(major);
+}
+
 export function bytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;

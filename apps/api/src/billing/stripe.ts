@@ -10,6 +10,12 @@ import { env } from '../env.js';
 
 export const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
+// A real key is sk_/rk_ + test|live + a long random string; anything shorter
+// (sk_test_xxx, sk_test_placeholder, …) means billing is not configured yet.
+export const stripeConfigured = /^(sk|rk)_(test|live)_[A-Za-z0-9]{20,}$/.test(
+  env.STRIPE_SECRET_KEY,
+);
+
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
   trialing: 'trialing',
   active: 'active',
@@ -38,8 +44,14 @@ export async function ensureStripeCustomer(organizationId: string): Promise<stri
 
 /** Reconcile our Subscription + Organization.planKey from a Stripe subscription object. */
 export async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
-  const priceId = sub.items.data[0]?.price.id ?? null;
-  const plan = priceId ? await PlanModel.findOne({ stripePriceId: priceId }).lean() : null;
+  // Match on the product, not the price: prices get replaced in Stripe (a new amount
+  // or currency), and subscribers on an older price are still on the same plan.
+  const price = sub.items.data[0]?.price;
+  const productId =
+    typeof price?.product === 'string' ? price.product : (price?.product?.id ?? null);
+  const plan =
+    (productId ? await PlanModel.findOne({ stripeProductId: productId }).lean() : null) ??
+    (price ? await PlanModel.findOne({ stripePriceId: price.id }).lean() : null);
   const status = STATUS_MAP[sub.status] ?? 'past_due';
 
   const org = await OrganizationModel.findOne({ stripeCustomerId: sub.customer as string });

@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { logger } from '@smtp-saas/shared';
 import { env } from '../env.js';
 import { markSubscriptionCanceled, stripe, syncSubscription } from './stripe.js';
+import { syncPlanCatalog } from '../plans/catalog.js';
 
 /**
  * Mounted at /webhooks/stripe with a raw body parser (Stripe signature verification
@@ -51,6 +52,15 @@ stripeWebhookRouter.post('/', raw({ type: 'application/json' }), async (req, res
       }
       case 'customer.subscription.deleted': {
         await markSubscriptionCanceled((event.data.object as Stripe.Subscription).id);
+        break;
+      }
+      case 'product.created':
+      case 'product.updated':
+      case 'product.deleted':
+      case 'price.created':
+      case 'price.updated':
+      case 'price.deleted': {
+        await syncPlanCatalog();
         break;
       }
       default:

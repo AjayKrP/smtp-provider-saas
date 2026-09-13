@@ -11,12 +11,13 @@ export interface Me {
 export interface Plan {
   key: string;
   name: string;
-  priceUsd: number;
   monthlyEmailQuota: number;
   maxDomains: number;
   maxCredentials: number;
   maxRecipientsPerMessage: number;
   requiresCheckout: boolean;
+  /** From the plan's Stripe price; null for the free plan or a paid plan with no price. */
+  price: { unitAmount: number; currency: string; interval: string } | null;
 }
 
 export interface DnsRecord {

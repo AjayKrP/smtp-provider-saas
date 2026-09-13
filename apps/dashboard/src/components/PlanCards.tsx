@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Plan } from '../api/hooks.js';
-import { Icon } from './bits.js';
+import { Icon, money } from './bits.js';
 
 const INCLUDED = [
   'DKIM signing & SPF alignment',
@@ -9,9 +9,10 @@ const INCLUDED = [
 ];
 
 function perThousand(p: Plan): string {
-  if (p.priceUsd === 0) return 'No credit card required';
-  const cost = p.priceUsd / (p.monthlyEmailQuota / 1000);
-  return `$${cost.toFixed(2)} per 1,000 emails`;
+  if (!p.requiresCheckout) return 'No credit card required';
+  if (!p.price) return 'Pricing coming soon';
+  const cost = p.price.unitAmount / (p.monthlyEmailQuota / 1000);
+  return `${money(Math.round(cost), p.price.currency, { exact: true })} per 1,000 emails`;
 }
 
 export function PlanCards({
@@ -36,6 +37,8 @@ export function PlanCards({
     );
   }
 
+  // The free plan has no Stripe price; show it as zero in the paid plans' currency.
+  const currency = plans.find((p) => p.price)?.price?.currency;
   const featured =
     featuredKey ?? (plans.length >= 3 ? plans[Math.floor(plans.length / 2)]?.key : undefined);
 
@@ -48,8 +51,19 @@ export function PlanCards({
             {isFeatured && <span className="tag">Most popular</span>}
             <h3>{p.name}</h3>
             <div className="price">
-              <strong>${p.priceUsd}</strong>
-              <span>/ month</span>
+              {p.price ? (
+                <>
+                  <strong>{money(p.price.unitAmount, p.price.currency)}</strong>
+                  <span>/ {p.price.interval}</span>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    {p.requiresCheckout ? '—' : currency ? money(0, currency) : 'Free'}
+                  </strong>
+                  {!p.requiresCheckout && currency && <span>/ month</span>}
+                </>
+              )}
             </div>
             <div className="per">{perThousand(p)}</div>
             <ul>

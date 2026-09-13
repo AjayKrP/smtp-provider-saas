@@ -34,14 +34,20 @@ export function PricingSection({ id }: { id?: string }) {
       <PlanCards
         plans={data}
         loading={isLoading}
-        action={(p, featured) => (
-          <Link
-            to={p.requiresCheckout ? `/register?plan=${p.key}` : '/register'}
-            className={`btn block${featured ? ' primary' : ''}`}
-          >
-            {p.requiresCheckout ? `Get ${p.name}` : 'Start for free'}
-          </Link>
-        )}
+        action={(p, featured) =>
+          p.requiresCheckout && !p.price ? (
+            <button className="block" disabled>
+              Unavailable
+            </button>
+          ) : (
+            <Link
+              to={p.requiresCheckout ? `/register?plan=${p.key}` : '/register'}
+              className={`btn block${featured ? ' primary' : ''}`}
+            >
+              {p.requiresCheckout ? `Get ${p.name}` : 'Start for free'}
+            </Link>
+          )
+        }
       />
     </section>
   );

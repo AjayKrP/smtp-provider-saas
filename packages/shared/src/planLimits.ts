@@ -17,12 +17,12 @@ export async function getEffectivePlan(
     return {
       key: dbPlan.key,
       name: dbPlan.name,
-      priceUsd: dbPlan.priceUsd,
       monthlyEmailQuota: dbPlan.monthlyEmailQuota,
       maxDomains: dbPlan.maxDomains,
       maxCredentials: dbPlan.maxCredentials,
       maxMessageSizeBytes: dbPlan.maxMessageSizeBytes,
       maxRecipientsPerMessage: dbPlan.maxRecipientsPerMessage,
+      stripeProductId: dbPlan.stripeProductId ?? undefined,
       stripePriceId: dbPlan.stripePriceId ?? null,
     };
   }

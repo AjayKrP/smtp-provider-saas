@@ -12,7 +12,7 @@ export function Billing() {
   const portal = usePortal();
   const [params] = useSearchParams();
   const current = usage.data?.planKey;
-  const currentPrice = plans.data?.find((p) => p.key === current)?.priceUsd ?? 0;
+  const currentPrice = plans.data?.find((p) => p.key === current)?.price?.unitAmount ?? 0;
   const result = params.get('checkout');
 
   async function pick(planKey: string) {
@@ -83,11 +83,13 @@ export function Billing() {
               <button
                 className={`block${featured ? ' primary' : ''}`}
                 onClick={() => pick(p.key)}
-                disabled={checkout.isPending}
+                disabled={checkout.isPending || !p.price}
               >
-                {checkout.isPending && checkout.variables === p.key
-                  ? 'Redirecting…'
-                  : `${p.priceUsd > currentPrice ? 'Upgrade' : 'Switch'} to ${p.name}`}
+                {!p.price
+                  ? 'Unavailable'
+                  : checkout.isPending && checkout.variables === p.key
+                    ? 'Redirecting…'
+                    : `${p.price.unitAmount > currentPrice ? 'Upgrade' : 'Switch'} to ${p.name}`}
               </button>
             ) : (
               <button className="block" disabled>
