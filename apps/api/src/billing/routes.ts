@@ -20,13 +20,20 @@ billingRouter.use(requireAuth);
 async function subscriptionView(organizationId: string) {
   const sub = await SubscriptionModel.findOne({ organizationId }).lean();
   if (!sub) {
-    return { planKey: null, currentPeriodStart: null, currentPeriodEnd: null, current: false };
+    return {
+      planKey: null,
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      current: false,
+      lifetime: false,
+    };
   }
   return {
     planKey: sub.planKey,
     currentPeriodStart: sub.currentPeriodStart ?? null,
     currentPeriodEnd: sub.currentPeriodEnd ?? null,
     current: isSubscriptionCurrent(sub),
+    lifetime: !!sub.lifetime,
   };
 }
 
@@ -72,6 +79,10 @@ billingRouter.post('/checkout', validateBody(checkoutSchema), async (req, res) =
   const plan = await PlanModel.findOne({ key: planKey }).lean();
   if (!plan) throw ApiError.notFound('Unknown plan');
   if (!plan.paid) throw ApiError.badRequest('The free plan does not require payment');
+  const sub = await SubscriptionModel.findOne({ organizationId }).lean();
+  if (sub?.lifetime && isSubscriptionCurrent(sub)) {
+    throw ApiError.badRequest('This account has lifetime access and does not need to pay');
+  }
   if (!plan.razorpayItemId) {
     throw ApiError.badRequest('This plan is not available for purchase yet');
   }

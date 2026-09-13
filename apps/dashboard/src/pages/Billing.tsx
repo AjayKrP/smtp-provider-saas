@@ -57,10 +57,21 @@ export function Billing() {
             {sub?.current ? (
               <>
                 <h2>
-                  {planName(sub.planKey)} plan <StatusBadge status="active" />
+                  {planName(sub.planKey)} plan{' '}
+                  {sub.lifetime ? (
+                    <span className="badge accent">lifetime</span>
+                  ) : (
+                    <StatusBadge status="active" />
+                  )}
                 </h2>
                 <p>
-                  Paid until <strong>{day(sub.currentPeriodEnd)}</strong>
+                  {sub.lifetime ? (
+                    'Complimentary lifetime access — nothing to pay or renew'
+                  ) : (
+                    <>
+                      Paid until <strong>{day(sub.currentPeriodEnd)}</strong>
+                    </>
+                  )}
                   {usage.data &&
                     ` · ${usage.data.remaining.toLocaleString()} emails left this month`}
                 </p>
@@ -86,7 +97,7 @@ export function Billing() {
               </>
             )}
           </div>
-          {sub?.planKey && (
+          {sub?.planKey && !sub.lifetime && (
             <button
               className={sub.current ? '' : 'primary'}
               onClick={() => buy(sub.planKey!)}
@@ -108,6 +119,13 @@ export function Billing() {
           loading={plans.isLoading}
           featuredKey={params.get('plan') ?? undefined}
           action={(p, featured) => {
+            if (sub?.lifetime && sub.current) {
+              return (
+                <button className="block" disabled>
+                  {p.key === sub.planKey ? 'Lifetime access' : 'Not needed'}
+                </button>
+              );
+            }
             if (!p.requiresCheckout) {
               return (
                 <button className="block" disabled>
@@ -139,10 +157,12 @@ export function Billing() {
             );
           }}
         />
-        <p className="muted small" style={{ marginTop: 14, textAlign: 'center' }}>
-          Each payment covers one month and never renews automatically. Paying for your current plan
-          adds a month to it; switching plans starts a new month today.
-        </p>
+        {!sub?.lifetime && (
+          <p className="muted small" style={{ marginTop: 14, textAlign: 'center' }}>
+            Each payment covers one month and never renews automatically. Paying for your current
+            plan adds a month to it; switching plans starts a new month today.
+          </p>
+        )}
       </div>
 
       <div className="card flush" style={{ marginTop: 32 }}>

@@ -43,6 +43,20 @@ describe('effectivePlanKey', () => {
     );
   });
 
+  it('grants a lifetime plan with no period end', () => {
+    const lifetime = {
+      planKey: 'starter',
+      status: 'active' as const,
+      currentPeriodEnd: null,
+      lifetime: true,
+    };
+    expect(effectivePlanKey('starter', lifetime, now)).toBe('starter');
+    expect(effectivePlanKey('starter', lifetime, new Date('2126-01-01T00:00:00Z'))).toBe('starter');
+    expect(effectivePlanKey('starter', { ...lifetime, status: 'canceled' as const }, now)).toBe(
+      'free',
+    );
+  });
+
   it('falls back to free once the period has ended or was canceled', () => {
     expect(effectivePlanKey('starter', active('starter', '2026-09-01T00:00:00Z'), now)).toBe(
       'free',

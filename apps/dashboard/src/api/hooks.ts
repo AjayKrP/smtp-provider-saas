@@ -148,8 +148,10 @@ export interface SubscriptionInfo {
   planKey: string | null;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
-  /** The prepaid period is still running. */
+  /** The prepaid period is still running (always true for a lifetime plan). */
   current: boolean;
+  /** Complimentary access with no end date; nothing to pay or renew. */
+  lifetime: boolean;
 }
 
 export interface PaymentRecord {

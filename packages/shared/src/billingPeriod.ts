@@ -4,6 +4,7 @@ interface SubscriptionState {
   planKey: string;
   status: SubscriptionStatus;
   currentPeriodEnd?: Date | null;
+  lifetime?: boolean | null;
 }
 
 /** Same day next month, clamped to the month's last day (31 Jan → 28/29 Feb). */
@@ -17,12 +18,13 @@ export function addOneMonth(date: Date): Date {
   return next;
 }
 
-/** Whether a prepaid subscription currently grants its plan. */
+/** Whether a subscription currently grants its plan: lifetime, or a running prepaid period. */
 export function isSubscriptionCurrent(
   sub: SubscriptionState | null | undefined,
   now = new Date(),
-): sub is SubscriptionState & { currentPeriodEnd: Date } {
-  return !!sub && sub.status === 'active' && !!sub.currentPeriodEnd && sub.currentPeriodEnd > now;
+): sub is SubscriptionState {
+  if (!sub || sub.status !== 'active') return false;
+  return !!sub.lifetime || (!!sub.currentPeriodEnd && sub.currentPeriodEnd > now);
 }
 
 /**
@@ -49,7 +51,7 @@ export function nextBillingPeriod(
   planKey: string,
   now = new Date(),
 ): { start: Date; end: Date } {
-  const start =
-    isSubscriptionCurrent(sub, now) && sub.planKey === planKey ? sub.currentPeriodEnd : now;
+  const running = isSubscriptionCurrent(sub, now) && sub.planKey === planKey && !sub.lifetime;
+  const start = running && sub.currentPeriodEnd ? sub.currentPeriodEnd : now;
   return { start, end: addOneMonth(start) };
 }
