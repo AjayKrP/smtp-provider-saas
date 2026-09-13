@@ -5,6 +5,14 @@ import { Icon } from '../components/bits.js';
 
 const FAQ = [
   {
+    q: 'I built my app with an AI tool. Will this work?',
+    a: 'Yes. We use standard SMTP, which every framework and AI coding assistant already knows. Copy the AI prompt from the home page into Cursor, Claude, Lovable, Bolt or Replit, add your credentials as environment variables, and it wires up the rest.',
+  },
+  {
+    q: 'Is there really a free plan?',
+    a: 'Yes — 500 emails a month on one domain, free, with no credit card. It is plenty for a side project or an MVP; upgrade when you outgrow it.',
+  },
+  {
     q: 'What counts as an email?',
     a: 'Every recipient of a message accepted by our SMTP server counts as one email. Quotas reset at the start of each calendar month.',
   },
@@ -32,8 +40,11 @@ export function PricingSection({ id }: { id?: string }) {
     <section className="section" id={id}>
       <div className="section-head">
         <span className="eyebrow">Pricing</span>
-        <h2>Simple, predictable pricing</h2>
-        <p>Start free. Upgrade when you grow. No per-seat fees.</p>
+        <h2>Affordable pricing that grows with your app</h2>
+        <p>
+          Start free. Pay a month at a time only when you need more — no card on file, no
+          auto-renew, no overage fees.
+        </p>
       </div>
       <PlanCards
         plans={data}
