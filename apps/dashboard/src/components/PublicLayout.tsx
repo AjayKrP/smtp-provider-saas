@@ -44,6 +44,12 @@ export function PublicLayout() {
             <Link to="/pricing" className="muted">
               Pricing
             </Link>
+            <Link to="/terms" className="muted">
+              Terms
+            </Link>
+            <Link to="/privacy" className="muted">
+              Privacy
+            </Link>
             {authenticated ? (
               <Link to="/" className="muted">
                 Dashboard

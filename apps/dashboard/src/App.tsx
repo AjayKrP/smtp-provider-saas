@@ -9,6 +9,8 @@ import { Register } from './pages/Register.js';
 import { ForgotPassword } from './pages/ForgotPassword.js';
 import { ResetPassword } from './pages/ResetPassword.js';
 import { VerifyEmail } from './pages/VerifyEmail.js';
+import { Terms } from './pages/Terms.js';
+import { Privacy } from './pages/Privacy.js';
 import { Home } from './pages/Home.js';
 import { Domains } from './pages/Domains.js';
 import { Credentials } from './pages/Credentials.js';
@@ -29,6 +31,8 @@ export function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
@@ -49,6 +53,8 @@ export function App() {
       <Route element={<PublicLayout />}>
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

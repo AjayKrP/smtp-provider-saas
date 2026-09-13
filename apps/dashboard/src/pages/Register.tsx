@@ -98,6 +98,10 @@ export function Register() {
         <button className="primary block" style={{ marginTop: 20 }} disabled={busy}>
           {busy ? 'Creating account…' : 'Create account'}
         </button>
+        <p className="legal-note">
+          By creating an account you agree to our <Link to="/terms">Terms of Service</Link> and{' '}
+          <Link to="/privacy">Privacy Policy</Link>.
+        </p>
         <p className="foot">
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
