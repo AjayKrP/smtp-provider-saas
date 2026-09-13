@@ -39,6 +39,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     maxCredentials: 5,
     maxMessageSizeBytes: 15 * 1024 * 1024,
     maxRecipientsPerMessage: 50,
+    razorpayItemId: 'item_TbVRDEc60LhxZk',
   },
   {
     key: 'growth',
@@ -49,6 +50,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     maxCredentials: 25,
     maxMessageSizeBytes: 25 * 1024 * 1024,
     maxRecipientsPerMessage: 100,
+    razorpayItemId: 'item_TbVREJuztLYEQz',
   },
 ];
 
