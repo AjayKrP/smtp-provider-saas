@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-export const BRAND = 'SMTP SaaS';
+export const BRAND = 'email4vibecoder';
 
 const ICONS = {
   dashboard: (

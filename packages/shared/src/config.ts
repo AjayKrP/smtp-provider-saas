@@ -37,7 +37,7 @@ const apiSchema = sharedSchema.extend({
   // Transactional mail (verification, password reset) is sent through an SMTP server —
   // normally this service's own relay with a dedicated credential. Unset host: emails
   // are logged instead of sent (fine in development, an error in production).
-  MAIL_FROM: z.string().default('SMTP SaaS <no-reply@localhost>'),
+  MAIL_FROM: z.string().default('email4vibecoder <no-reply@localhost>'),
   SYSTEM_SMTP_HOST: z.string().optional(),
   SYSTEM_SMTP_PORT: z.coerce.number().int().positive().default(465),
   SYSTEM_SMTP_USER: z.string().optional(),

@@ -1,6 +1,6 @@
 import type { OutgoingMail } from './mailer.js';
 
-const BRAND = 'SMTP SaaS';
+const BRAND = 'email4vibecoder';
 
 const escapeHtml = (s: string) =>
   s.replace(
