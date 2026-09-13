@@ -12,6 +12,11 @@ export interface PlanDefinition {
   maxCredentials: number;
   maxMessageSizeBytes: number;
   maxRecipientsPerMessage: number;
+  /**
+   * Existing Stripe product to bill this plan under. When unset, the seed finds or
+   * creates a product tagged with `metadata.planKey`.
+   */
+  stripeProductId?: string;
 }
 
 export const PLAN_DEFINITIONS: PlanDefinition[] = [
@@ -34,6 +39,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     maxCredentials: 5,
     maxMessageSizeBytes: 15 * 1024 * 1024,
     maxRecipientsPerMessage: 50,
+    stripeProductId: 'prod_VFf4wKVlyg0xcu',
   },
   {
     key: 'growth',

@@ -12,11 +12,22 @@ import { stripe } from '../billing/stripe.js';
 // (sk_test_xxx, sk_test_placeholder, …) is treated as "billing not configured yet".
 const stripeEnabled = /^sk_(test|live)_[A-Za-z0-9]{20,}$/.test(env.STRIPE_SECRET_KEY);
 
-async function ensureStripePrice(planKey: string, name: string, priceUsd: number) {
+async function findOrCreateProduct(planKey: string, name: string, productId?: string) {
+  if (productId) return stripe.products.retrieve(productId);
   const found = await stripe.products.search({ query: `metadata['planKey']:'${planKey}'`, limit: 1 });
-  const product =
+  return (
     found.data[0] ??
-    (await stripe.products.create({ name: `SMTP SaaS — ${name}`, metadata: { planKey } }));
+    (await stripe.products.create({ name: `SMTP SaaS — ${name}`, metadata: { planKey } }))
+  );
+}
+
+async function ensureStripePrice(
+  planKey: string,
+  name: string,
+  priceUsd: number,
+  productId?: string,
+) {
+  const product = await findOrCreateProduct(planKey, name, productId);
 
   const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 });
   const wantAmount = Math.round(priceUsd * 100);
@@ -45,7 +56,7 @@ async function main(): Promise<void> {
 
     if (stripeEnabled && def.priceUsd > 0) {
       try {
-        const ids = await ensureStripePrice(def.key, def.name, def.priceUsd);
+        const ids = await ensureStripePrice(def.key, def.name, def.priceUsd, def.stripeProductId);
         stripeProductId = ids.productId;
         stripePriceId = ids.priceId;
       } catch (err) {
