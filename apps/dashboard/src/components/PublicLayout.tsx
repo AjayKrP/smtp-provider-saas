@@ -1,7 +1,11 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext.js';
 import { BRAND, Logo } from './bits.js';
 
+/** Header and footer shared by every signed-out page: landing, pricing and auth. */
 export function PublicLayout() {
+  const { authenticated } = useAuth();
+
   return (
     <div className="site">
       <header className="site-nav">
@@ -11,12 +15,20 @@ export function PublicLayout() {
             <NavLink to="/pricing">Pricing</NavLink>
           </nav>
           <div className="row">
-            <Link to="/login" className="btn ghost sm">
-              Sign in
-            </Link>
-            <Link to="/register" className="btn primary sm">
-              Get started
-            </Link>
+            {authenticated ? (
+              <Link to="/" className="btn primary sm">
+                Go to dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn ghost sm">
+                  Sign in
+                </Link>
+                <Link to="/register" className="btn primary sm">
+                  Get started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -32,9 +44,15 @@ export function PublicLayout() {
             <Link to="/pricing" className="muted">
               Pricing
             </Link>
-            <Link to="/login" className="muted">
-              Sign in
-            </Link>
+            {authenticated ? (
+              <Link to="/" className="muted">
+                Dashboard
+              </Link>
+            ) : (
+              <Link to="/login" className="muted">
+                Sign in
+              </Link>
+            )}
           </span>
         </div>
       </footer>

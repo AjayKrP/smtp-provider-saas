@@ -1,12 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { api, apiErrorMessage } from '../api/client.js';
-import { Icon, Logo } from './bits.js';
+import { Icon } from './bits.js';
 
-/** Centered logo + card shell shared by every signed-out auth page. */
+/** Centered card for auth pages; the site header and footer come from PublicLayout. */
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
     <div className="auth">
-      <Logo />
       <div className="card authbox">{children}</div>
     </div>
   );

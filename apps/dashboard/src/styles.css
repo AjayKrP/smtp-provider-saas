@@ -644,15 +644,17 @@ pre {
 
 /* ───────── Auth ───────── */
 .auth {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 48px 16px 64px;
 }
-.auth .logo {
-  margin-bottom: 28px;
+/* Let the auth card fill the space between the site header and footer. */
+.site main:has(> .auth) {
+  display: flex;
+  flex-direction: column;
 }
 .authbox {
   width: 100%;
