@@ -1,0 +1,16 @@
+---
+subject: Payment received — your {{planName}} plan is active
+preheader: {{amount}} paid · {{planName}} active until {{periodEnd}}
+---
+{{#> heading}}Thanks for your payment{{/heading}}
+{{#> paragraph}}Hi {{name}}, we've received your payment. Your <strong>{{planName}}</strong> plan is active until <strong>{{periodEnd}}</strong>.{{/paragraph}}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 6px; border-top:1px solid #f0f0f2;">
+  {{> detail-row label="Plan" value=planName strong=false}}
+  {{> detail-row label="Period" value=(concat periodStart " – " periodEnd) strong=false}}
+  {{> detail-row label="Paid on" value=paidOn strong=false}}
+  {{> detail-row label="Payment ID" value=paymentId strong=false}}
+  {{> detail-row label="Order ID" value=orderId strong=false}}
+  {{> detail-row label="Amount paid" value=amount strong=true}}
+</table>
+{{> button url=billingUrl label="View billing"}}
+{{#> note}}Plans are prepaid and never renew automatically — renew any time from Billing to keep your limits after {{periodEnd}}. This is a payment confirmation, not a tax invoice.{{/note}}

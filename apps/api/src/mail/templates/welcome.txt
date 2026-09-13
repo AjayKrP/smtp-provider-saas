@@ -1,0 +1,20 @@
+You're in, {{name}}!
+
+Your {{brand}} account is ready on the free {{freePlanName}} plan — {{freeQuota}} emails every month, no card needed.
+
+Send your first email in three steps:
+
+1. Add your domain: {{domainsUrl}}
+   Copy the DNS records we generate into your DNS provider, then hit Verify.
+2. Create SMTP credentials: {{credentialsUrl}}
+   One click gives you a username and password — make one per app.
+3. Paste and ship
+   Drop the settings into your .env, or paste our AI prompt into Cursor, Claude or Lovable.
+
+Open your dashboard: {{dashboardUrl}}
+{{#if paidFrom}}
+
+Outgrowing {{freeQuota}} emails? Paid plans start at {{paidFrom}}/month: {{pricingUrl}}
+{{/if}}
+
+— {{brand}}

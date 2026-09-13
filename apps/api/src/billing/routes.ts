@@ -12,6 +12,7 @@ import { ApiError } from '../http/errors.js';
 import { validateBody } from '../http/validate.js';
 import { auth, requireAuth } from '../auth/middleware.js';
 import { fulfillOrder } from './fulfill.js';
+import { sendPaymentReceipt } from './receipt.js';
 import { createOrder, fetchItem, razorpayConfigured, verifyPaymentSignature } from './razorpay.js';
 
 export const billingRouter: Router = Router();
@@ -155,6 +156,8 @@ billingRouter.post('/verify', validateBody(verifySchema), async (req, res) => {
   }).lean();
   if (!payment) throw ApiError.notFound('Payment not found');
 
-  await fulfillOrder(body.razorpay_order_id, body.razorpay_payment_id);
+  await fulfillOrder(body.razorpay_order_id, body.razorpay_payment_id, {
+    onPaid: sendPaymentReceipt,
+  });
   res.json(await subscriptionView(organizationId));
 });

@@ -11,7 +11,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "tsc -b packages/shared apps/api apps/smtp-ingress apps/worker",
+    "build": "tsc -b packages/shared apps/api apps/smtp-ingress apps/worker && npm run copy-assets --workspace apps/api",
     "typecheck": "tsc -b packages/shared apps/api apps/smtp-ingress apps/worker && tsc -p tsconfig.test.json && npm run typecheck --workspace apps/dashboard",
     "lint": "eslint .",
     "format": "prettier --write .",

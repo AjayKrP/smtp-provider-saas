@@ -1,0 +1,9 @@
+---
+subject: Confirm your email for {{brand}}
+preheader: One click to activate your {{brand}} account.
+---
+{{#> heading}}Confirm your email{{/heading}}
+{{#> paragraph}}Hi {{name}}, welcome to {{brand}}! Confirm your email address to activate your account and start sending.{{/paragraph}}
+{{> button url=verifyUrl label="Confirm my email"}}
+{{#> note}}This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.{{/note}}
+{{> link-fallback url=verifyUrl}}

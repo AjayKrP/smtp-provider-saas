@@ -1,0 +1,10 @@
+Hi {{name}},
+
+Someone just tried to create an account on {{brand}} with this email address, but you already have one.
+
+Sign in: {{signInUrl}}
+Forgot your password? Choose a new one (link valid for 1 hour): {{resetUrl}}
+
+If this wasn't you, you can ignore this email — nothing has changed.
+
+— {{brand}}

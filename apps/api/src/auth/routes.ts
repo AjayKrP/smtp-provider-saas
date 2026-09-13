@@ -1,11 +1,19 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
-import { UserModel, OrganizationModel, logger, mongoose, type UserDoc } from '@smtp-saas/shared';
+import {
+  OrganizationModel,
+  PlanModel,
+  UserModel,
+  logger,
+  mongoose,
+  planByKey,
+  type UserDoc,
+} from '@smtp-saas/shared';
 import { env, isProd } from '../env.js';
 import { ApiError } from '../http/errors.js';
 import { validateBody } from '../http/validate.js';
-import { accountExistsEmail, passwordResetEmail, verificationEmail } from '../mail/templates.js';
-import { sendMail } from '../mail/mailer.js';
+import { formatMoney } from '../mail/format.js';
+import { sendTemplate } from '../mail/send.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeLinkToken, issueLinkToken, issuedRecently } from './linkTokens.js';
 import { REFRESH_COOKIE, signAccessToken, signRefreshToken, verifyRefreshToken } from './tokens.js';
@@ -63,15 +71,45 @@ async function sendLink(
     const token = await issueLinkToken(user._id, purpose);
     const path = purpose === 'verify_email' ? 'verify-email' : 'reset-password';
     const link = `${env.DASHBOARD_URL}/${path}?token=${encodeURIComponent(token)}`;
-    const mail =
-      kind === 'verify_email'
-        ? verificationEmail(user.email, user.name, link)
-        : kind === 'reset_password'
-          ? passwordResetEmail(user.email, user.name, link)
-          : accountExistsEmail(user.email, user.name, `${env.DASHBOARD_URL}/login`, link);
-    await sendMail(mail);
+    if (kind === 'verify_email') {
+      await sendTemplate(user.email, 'verify-email', { name: user.name, verifyUrl: link });
+    } else if (kind === 'reset_password') {
+      await sendTemplate(user.email, 'password-reset', { name: user.name, resetUrl: link });
+    } else {
+      await sendTemplate(user.email, 'account-exists', {
+        name: user.name,
+        signInUrl: `${env.DASHBOARD_URL}/login`,
+        resetUrl: link,
+      });
+    }
   } catch (err) {
     logger.error({ err, userId: user._id.toString(), kind }, 'failed to send auth email');
+  }
+}
+
+/** Sent once, when an address is first confirmed. Failures are logged, never thrown. */
+async function sendWelcome(user: UserDoc): Promise<void> {
+  try {
+    const plans = await PlanModel.find({}).lean();
+    const free = plans.find((p) => p.key === 'free') ?? planByKey('free');
+    const cheapestPaid = plans
+      .filter((p) => p.paid && typeof p.unitAmount === 'number' && p.currency)
+      .sort((a, b) => a.unitAmount! - b.unitAmount!)[0];
+    const app = env.DASHBOARD_URL;
+    await sendTemplate(user.email, 'welcome', {
+      name: user.name,
+      dashboardUrl: app,
+      domainsUrl: `${app}/domains`,
+      credentialsUrl: `${app}/credentials`,
+      freePlanName: free?.name ?? 'Free',
+      freeQuota: (free?.monthlyEmailQuota ?? 0).toLocaleString('en-IN'),
+      paidFrom: cheapestPaid
+        ? formatMoney(cheapestPaid.unitAmount!, cheapestPaid.currency!, { whole: true })
+        : null,
+      pricingUrl: `${app}/pricing`,
+    });
+  } catch (err) {
+    logger.error({ err, userId: user._id.toString() }, 'failed to send welcome email');
   }
 }
 
@@ -159,12 +197,14 @@ authRouter.post('/verify-email', validateBody(tokenSchema), async (req, res) => 
   if (!userId) {
     throw ApiError.badRequest('This verification link is invalid or has expired.');
   }
+  const before = await UserModel.findById(userId).lean();
   const user = await UserModel.findOneAndUpdate(
     { _id: userId },
     [{ $set: { emailVerifiedAt: { $ifNull: ['$emailVerifiedAt', '$$NOW'] } } }],
     { new: true },
   );
   if (!user) throw ApiError.badRequest('This verification link is invalid or has expired.');
+  if (before && !before.emailVerifiedAt) await sendWelcome(user);
   // The link proves control of the inbox, so sign the user straight in.
   res.json(issueSession(res, user));
 });

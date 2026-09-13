@@ -119,6 +119,11 @@ describe('email verification', () => {
     expect(verified.body.accessToken).toEqual(expect.any(String));
     await request(app).post('/auth/verify-email').send({ token }).expect(400);
     await request(app).post('/auth/login').send(account).expect(200);
+
+    // Exactly one welcome email, sent on first verification.
+    const welcomes = sent.filter((m) => /^Welcome to/.test(m.subject));
+    expect(welcomes).toHaveLength(1);
+    expect(welcomes[0]!.to).toBe('ada@example.com');
   });
 
   it('resends only to unverified accounts, never reveals account existence, and throttles', async () => {

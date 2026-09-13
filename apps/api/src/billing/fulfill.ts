@@ -4,6 +4,7 @@ import {
   SubscriptionModel,
   logger,
   nextBillingPeriod,
+  type PaymentDoc,
 } from '@smtp-saas/shared';
 
 /**
@@ -16,6 +17,7 @@ import {
 export async function fulfillOrder(
   razorpayOrderId: string,
   razorpayPaymentId: string,
+  opts: { onPaid?: (payment: PaymentDoc) => Promise<void> } = {},
 ): Promise<boolean> {
   const payment = await PaymentModel.findOne({ razorpayOrderId });
   if (!payment) {
@@ -53,6 +55,8 @@ export async function fulfillOrder(
     { _id: claimed._id },
     { $set: { periodStart: start, periodEnd: end } },
   );
+  claimed.periodStart = start;
+  claimed.periodEnd = end;
   await OrganizationModel.updateOne(
     { _id: claimed.organizationId },
     { $set: { planKey: claimed.planKey } },
@@ -67,5 +71,7 @@ export async function fulfillOrder(
     },
     'razorpay payment fulfilled',
   );
+  // Runs only for the caller that actually claimed the payment, so at most once.
+  await opts.onPaid?.(claimed);
   return true;
 }

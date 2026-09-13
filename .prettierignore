@@ -1,0 +1,2 @@
+# Handlebars email templates: Prettier does not understand {{…}} blocks and mangles them.
+apps/api/src/mail/templates/

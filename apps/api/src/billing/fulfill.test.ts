@@ -65,6 +65,21 @@ describe('fulfillOrder', () => {
     expect(again?.currentPeriodEnd?.getTime()).toBe(first?.currentPeriodEnd?.getTime());
   });
 
+  it('runs the onPaid hook (payment receipt) exactly once, with the period filled in', async () => {
+    await order('order_1');
+    const paid: { periodEnd?: Date | null }[] = [];
+    const onPaid = async (p: { periodEnd?: Date | null }) => {
+      paid.push(p);
+    };
+    await Promise.all([
+      fulfillOrder('order_1', 'pay_1', { onPaid }),
+      fulfillOrder('order_1', 'pay_1', { onPaid }),
+    ]);
+    await fulfillOrder('order_1', 'pay_1', { onPaid });
+    expect(paid).toHaveLength(1);
+    expect(paid[0]!.periodEnd).toBeInstanceOf(Date);
+  });
+
   it('extends a running period when the same plan is renewed', async () => {
     await order('order_1');
     await order('order_2');

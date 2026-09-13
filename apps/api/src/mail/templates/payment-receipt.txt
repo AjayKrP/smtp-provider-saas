@@ -1,0 +1,16 @@
+Hi {{name}},
+
+Thanks for your payment. Your {{planName}} plan is active until {{periodEnd}}.
+
+  Plan:         {{planName}}
+  Period:       {{periodStart}} – {{periodEnd}}
+  Paid on:      {{paidOn}}
+  Payment ID:   {{paymentId}}
+  Order ID:     {{orderId}}
+  Amount paid:  {{amount}}
+
+View billing: {{billingUrl}}
+
+Plans are prepaid and never renew automatically — renew any time from Billing to keep your limits after {{periodEnd}}. This is a payment confirmation, not a tax invoice.
+
+— {{brand}}

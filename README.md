@@ -91,6 +91,23 @@ month now. When the period ends the organization falls back to the Free plan's l
    webhook is the backstop if the customer closes the tab. Orders from other sites on
    the same Razorpay account are ignored.
 
+## Email templates
+
+Every email the platform sends (verification, welcome, password reset, account-exists,
+payment receipt) is a file in `apps/api/src/mail/templates/` — no wording lives in code:
+
+- `<name>.html` — front matter with `subject` and `preheader`, then the body. It is wrapped
+  in `partials/layout.html` and can use the shared partials, e.g.
+  `{{> button url=verifyUrl label="Confirm my email"}}` or `{{#> note}}…{{/note}}`.
+- `<name>.txt` — the plain-text version.
+
+Templates are [Handlebars](https://handlebarsjs.com/): `{{value}}` is HTML-escaped and
+rendering is strict, so a misspelt variable fails the tests in `render.test.ts` instead of
+sending a broken email. `brand`, `supportEmail` (both from `MAIL_FROM`), `appUrl` and `year`
+are available everywhere; the data each template receives is typed in `EmailTemplates`
+(`render.ts`). The build copies the folder into `dist/`. Prettier ignores it because it
+mangles Handlebars blocks.
+
 ## API surface (dashboard-facing)
 
 ```

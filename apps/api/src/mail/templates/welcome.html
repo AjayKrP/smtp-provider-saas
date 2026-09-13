@@ -1,0 +1,24 @@
+---
+subject: Welcome to {{brand}} — let's send your first email
+preheader: Your account is ready. Three steps to your first delivered email.
+---
+{{#> heading}}You're in, {{name}} 🎉{{/heading}}
+{{#> paragraph}}Your account is ready on the free <strong>{{freePlanName}}</strong> plan — {{freeQuota}} emails every month, no card needed. Here's how to send your first email:{{/paragraph}}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">
+  <tr>
+    <td valign="top" style="width:34px; padding:10px 0;"><span style="display:inline-block; width:24px; height:24px; line-height:24px; text-align:center; border-radius:999px; background:#eef2ff; color:#4f46e5; font-size:13px; font-weight:700;">1</span></td>
+    <td style="padding:10px 0; font-size:14px; line-height:1.6; color:#3f3f46;"><a href="{{domainsUrl}}" style="color:#18181b; font-weight:600; text-decoration:none;">Add your domain</a><br />Copy the DNS records we generate into your DNS provider, then hit Verify.</td>
+  </tr>
+  <tr>
+    <td valign="top" style="width:34px; padding:10px 0;"><span style="display:inline-block; width:24px; height:24px; line-height:24px; text-align:center; border-radius:999px; background:#eef2ff; color:#4f46e5; font-size:13px; font-weight:700;">2</span></td>
+    <td style="padding:10px 0; font-size:14px; line-height:1.6; color:#3f3f46;"><a href="{{credentialsUrl}}" style="color:#18181b; font-weight:600; text-decoration:none;">Create SMTP credentials</a><br />One click gives you a username and password — make one per app.</td>
+  </tr>
+  <tr>
+    <td valign="top" style="width:34px; padding:10px 0;"><span style="display:inline-block; width:24px; height:24px; line-height:24px; text-align:center; border-radius:999px; background:#eef2ff; color:#4f46e5; font-size:13px; font-weight:700;">3</span></td>
+    <td style="padding:10px 0; font-size:14px; line-height:1.6; color:#3f3f46;"><strong style="color:#18181b;">Paste and ship</strong><br />Drop the settings into your .env — or paste our AI prompt into Cursor, Claude or Lovable.</td>
+  </tr>
+</table>
+{{> button url=dashboardUrl label="Open my dashboard"}}
+{{#if paidFrom}}
+{{#> note}}Outgrowing {{freeQuota}} emails? <a href="{{pricingUrl}}" style="color:#6366f1;">Paid plans</a> start at {{paidFrom}}/month, prepaid with UPI or cards — no auto-renew.{{/note}}
+{{/if}}

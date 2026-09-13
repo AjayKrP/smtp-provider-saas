@@ -1,0 +1,9 @@
+---
+subject: You already have an account on {{brand}}
+preheader: Someone tried to sign up with your email address.
+---
+{{#> heading}}You already have an account{{/heading}}
+{{#> paragraph}}Hi {{name}}, someone just tried to create an account on {{brand}} with this email address, but you already have one.{{/paragraph}}
+{{#> paragraph}}If that was you, <a href="{{signInUrl}}" style="color:#4f46e5; font-weight:600;">sign in</a> — or reset your password if you've forgotten it.{{/paragraph}}
+{{> button url=resetUrl label="Reset my password"}}
+{{#> note}}The reset link expires in 1 hour. If this wasn't you, you can ignore this email — nothing has changed.{{/note}}
