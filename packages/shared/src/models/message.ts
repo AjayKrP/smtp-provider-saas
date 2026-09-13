@@ -28,6 +28,8 @@ const messageSchema = new Schema(
     attempts: { type: Number, default: 0 },
     // GridFS file id for the raw MIME (raw_messages bucket).
     rawRef: { type: Schema.Types.ObjectId, required: true },
+    // Set when the retention job deletes the stored MIME body (see worker retention.ts).
+    rawDeletedAt: { type: Date, default: null },
     queuedAt: { type: Date, default: Date.now },
     completedAt: { type: Date, default: null },
     lastError: { type: String, default: null },

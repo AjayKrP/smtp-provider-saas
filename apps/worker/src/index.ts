@@ -9,6 +9,9 @@ import {
 } from '@smtp-saas/shared';
 import { env } from './env.js';
 import { processDelivery } from './processor.js';
+import { runRetention } from './retention.js';
+
+const RETENTION_INTERVAL_MS = 60 * 60_000;
 
 async function main(): Promise<void> {
   await connectMongo();
@@ -22,11 +25,21 @@ async function main(): Promise<void> {
 
   worker.on('completed', (job) => logger.info({ jobId: job.id }, 'delivery job completed'));
   worker.on('failed', (job, err) =>
-    logger.warn({ jobId: job?.id, attemptsMade: job?.attemptsMade, err: err.message }, 'delivery job failed'),
+    logger.warn(
+      { jobId: job?.id, attemptsMade: job?.attemptsMade, err: err.message },
+      'delivery job failed',
+    ),
   );
   worker.on('error', (err) => logger.error({ err }, 'worker error'));
 
   logger.info({ concurrency: env.WORKER_CONCURRENCY }, 'delivery worker started');
+
+  // Hourly, plus once at start. Idempotent, so overlapping blue/green slots are harmless.
+  const retention = () =>
+    void runRetention().catch((err: unknown) => logger.error({ err }, 'retention job failed'));
+  retention();
+  const retentionTimer = setInterval(retention, RETENTION_INTERVAL_MS);
+  retentionTimer.unref();
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'shutting down worker');
