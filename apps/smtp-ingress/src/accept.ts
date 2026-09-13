@@ -7,7 +7,6 @@ import {
   MessageEventModel,
   MessageModel,
   domainOf,
-  extractAddress,
   getEffectivePlan,
   logger,
   rawMessageBucket,
@@ -17,6 +16,7 @@ import type { DeliveryJobData } from '@smtp-saas/shared';
 import type { AuthedCredential } from './auth.js';
 import { env } from './env.js';
 import { allowRate } from './ratelimit.js';
+import { resolveSenderIdentity } from './senderIdentity.js';
 
 export type EnqueueFn = (data: DeliveryJobData) => Promise<void>;
 
@@ -62,23 +62,29 @@ export async function acceptMessage(
   const raw = await readToBuffer(stream, env.SMTP_MAX_MESSAGE_BYTES);
   const parsed = await simpleParser(raw);
 
-  const fromHeader = parsed.from?.text ?? '';
-  const fromAddress = extractAddress(fromHeader);
-  if (!fromAddress) throw new SmtpError(550, 'A valid From header is required');
-  const fromDomain = domainOf(fromAddress);
-  if (!fromDomain) throw new SmtpError(550, 'Could not parse the From domain');
+  const identity = resolveSenderIdentity(parsed);
+  if (!identity.ok) throw new SmtpError(550, identity.reason);
+  const { fromAddress } = identity;
+  const fromDomain = domainOf(fromAddress)!;
+  // A Sender header is shown by clients too ("on behalf of"), so it must be ours as well.
+  const identityDomains = [
+    ...new Set([fromDomain, ...(identity.senderAddress ? [domainOf(identity.senderAddress)!] : [])]),
+  ];
 
-  const [plan, verifiedDomain] = await Promise.all([
+  const [plan, verifiedCount] = await Promise.all([
     getEffectivePlan(user.organizationId),
-    DomainModel.findOne({
+    DomainModel.countDocuments({
       organizationId: user.organizationId,
-      domain: fromDomain,
+      domain: { $in: identityDomains },
       status: 'verified',
-    }).lean(),
+    }),
   ]);
 
-  if (!verifiedDomain) {
-    throw new SmtpError(550, `${fromDomain} is not a verified sending domain for your account`);
+  if (verifiedCount !== identityDomains.length) {
+    throw new SmtpError(
+      550,
+      `${identityDomains.join(' / ')} is not a verified sending domain for your account`,
+    );
   }
 
   const recipients = session.envelope.rcptTo.map((r) => r.address.toLowerCase());
