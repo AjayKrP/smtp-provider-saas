@@ -6,6 +6,9 @@ import { Landing } from './pages/Landing.js';
 import { Pricing } from './pages/Pricing.js';
 import { Login } from './pages/Login.js';
 import { Register } from './pages/Register.js';
+import { ForgotPassword } from './pages/ForgotPassword.js';
+import { ResetPassword } from './pages/ResetPassword.js';
+import { VerifyEmail } from './pages/VerifyEmail.js';
 import { Home } from './pages/Home.js';
 import { Domains } from './pages/Domains.js';
 import { Credentials } from './pages/Credentials.js';
@@ -24,6 +27,9 @@ export function App() {
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -39,6 +45,9 @@ export function App() {
         <Route path="/billing" element={<Billing />} />
       </Route>
       <Route path="/pricing" element={<Navigate to="/billing" replace />} />
+      {/* Emailed links can be opened while already signed in. */}
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

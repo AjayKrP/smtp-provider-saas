@@ -674,6 +674,37 @@ pre {
   font-size: 13px;
 }
 
+.auth-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.authbox .sub strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.notice {
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--warn-soft);
+}
+.notice.ok {
+  background: var(--ok-soft);
+}
+
 /* ───────── Public site ───────── */
 .site {
   min-height: 100vh;

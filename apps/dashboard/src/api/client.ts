@@ -60,6 +60,11 @@ api.interceptors.response.use(
   },
 );
 
+/** The API's machine-readable error code, e.g. "email_not_verified". */
+export function apiErrorCode(err: unknown): string | undefined {
+  return (err as AxiosError<{ error?: string }>).response?.data?.error;
+}
+
 export function apiErrorMessage(err: unknown): string {
   const e = err as AxiosError<{ message?: string }>;
   return e.response?.data?.message ?? e.message ?? 'Request failed';

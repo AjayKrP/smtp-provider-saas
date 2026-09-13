@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
-import { apiErrorMessage } from '../api/client.js';
-import { Logo } from '../components/bits.js';
+import { apiErrorCode, apiErrorMessage } from '../api/client.js';
+import { AuthCard, CheckInbox } from '../components/AuthCard.js';
 
 export function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
+  const [params] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [unverified, setUnverified] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -20,18 +22,38 @@ export function Login() {
       await login(email, password);
       nav('/');
     } catch (err) {
-      setError(apiErrorMessage(err));
+      if (apiErrorCode(err) === 'email_not_verified') setUnverified(true);
+      else setError(apiErrorMessage(err));
     } finally {
       setBusy(false);
     }
   }
 
+  if (unverified) {
+    return (
+      <AuthCard>
+        <CheckInbox email={email.trim().toLowerCase()} title="Confirm your email first">
+          <p className="muted small" style={{ marginTop: 8 }}>
+            You need to confirm your email address before you can sign in.
+          </p>
+        </CheckInbox>
+        <p className="foot" style={{ marginTop: 8 }}>
+          <button type="button" className="ghost sm" onClick={() => setUnverified(false)}>
+            Back to sign in
+          </button>
+        </p>
+      </AuthCard>
+    );
+  }
+
   return (
-    <div className="auth">
-      <Logo />
-      <form className="card authbox" onSubmit={submit}>
+    <AuthCard>
+      <form onSubmit={submit}>
         <h1>Welcome back</h1>
         <p className="sub">Sign in to your account to continue.</p>
+        {params.get('reset') === '1' && (
+          <div className="notice ok">Your password was changed. Sign in with the new one.</div>
+        )}
         <label htmlFor="email">Email</label>
         <input
           id="email"
@@ -43,7 +65,12 @@ export function Login() {
           required
           autoFocus
         />
-        <label htmlFor="password">Password</label>
+        <div className="label-row">
+          <label htmlFor="password">Password</label>
+          <Link to="/forgot-password" className="small">
+            Forgot password?
+          </Link>
+        </div>
         <input
           id="password"
           type="password"
@@ -60,6 +87,6 @@ export function Login() {
           No account? <Link to="/register">Create one</Link>
         </p>
       </form>
-    </div>
+    </AuthCard>
   );
 }

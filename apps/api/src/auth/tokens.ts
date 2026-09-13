@@ -16,18 +16,20 @@ export function verifyAccessToken(token: string): AccessClaims {
   return { sub: String(decoded.sub), org: String((decoded as jwt.JwtPayload).org) };
 }
 
-export function signRefreshToken(userId: string): string {
-  return jwt.sign({ sub: userId, typ: 'refresh' }, env.JWT_REFRESH_SECRET, {
+/** `ver` is the user's sessionVersion at sign-in; a bump invalidates the token. */
+export function signRefreshToken(userId: string, sessionVersion: number): string {
+  return jwt.sign({ sub: userId, typ: 'refresh', ver: sessionVersion }, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_TTL,
   });
 }
 
-export function verifyRefreshToken(token: string): { sub: string } {
+export function verifyRefreshToken(token: string): { sub: string; ver: number } {
   const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET);
   if (typeof decoded === 'string' || (decoded as jwt.JwtPayload).typ !== 'refresh') {
     throw new Error('not a refresh token');
   }
-  return { sub: String(decoded.sub) };
+  // Tokens issued before session versioning carry no `ver`; they match version 0.
+  return { sub: String(decoded.sub), ver: Number((decoded as jwt.JwtPayload).ver ?? 0) };
 }
 
 export const REFRESH_COOKIE = 'smtp_saas_rt';

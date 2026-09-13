@@ -1,4 +1,5 @@
 export * from './user.js';
+export * from './authToken.js';
 export * from './organization.js';
 export * from './plan.js';
 export * from './subscription.js';

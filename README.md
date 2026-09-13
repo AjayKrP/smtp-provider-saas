@@ -50,7 +50,9 @@ sends every message to MailDev instead of doing real MX lookups.
 `MONGO_URI`, `REDIS_URL`, `ENCRYPTION_KEY` (`openssl rand -base64 32`),
 `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `API_PUBLIC_URL`, `DASHBOARD_URL`,
 `SMTP_HOSTNAME`, `BOUNCE_DOMAIN`. Razorpay keys can stay unset until you test billing
-(paid plans then show as unavailable).
+(paid plans then show as unavailable). Without `SYSTEM_SMTP_HOST`, verification and
+password-reset emails are logged by the API instead of sent — copy the link from the
+`transactional email NOT sent` log line to verify a local account.
 
 > `POST /auth/register` uses a MongoDB transaction, so Mongo must run as a replica set.
 > `npm run infra:up` handles that; a plain `mongod` will not work.
@@ -93,6 +95,8 @@ month now. When the period ends the organization falls back to the Free plan's l
 
 ```
 POST   /auth/register | /auth/login | /auth/refresh | /auth/logout
+POST   /auth/verify-email | /auth/resend-verification
+POST   /auth/forgot-password | /auth/reset-password
 GET    /auth/me
 GET    /plans
 POST   /billing/checkout | /billing/verify

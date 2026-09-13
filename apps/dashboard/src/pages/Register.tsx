@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
 import { apiErrorMessage } from '../api/client.js';
-import { Logo } from '../components/bits.js';
+import { AuthCard, CheckInbox } from '../components/AuthCard.js';
+
+/** Remembered across the round trip through the verification email (often a new tab). */
+export const PENDING_PLAN_KEY = 'smtp_saas_pending_plan';
 
 export function Register() {
   const { register } = useAuth();
-  const nav = useNavigate();
   const [params] = useSearchParams();
   const plan = params.get('plan');
   const [form, setForm] = useState({ name: '', email: '', password: '', organizationName: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -27,8 +30,12 @@ export function Register() {
         password: form.password,
         organizationName: form.organizationName || undefined,
       });
-      // Came from a paid plan on the pricing page — land on Billing with it highlighted.
-      nav(plan ? `/billing?plan=${encodeURIComponent(plan)}` : '/');
+      try {
+        if (plan) localStorage.setItem(PENDING_PLAN_KEY, plan);
+      } catch {
+        // Storage unavailable; the user just lands on the overview after verifying.
+      }
+      setRegisteredEmail(form.email.trim().toLowerCase());
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -36,10 +43,20 @@ export function Register() {
     }
   }
 
+  if (registeredEmail) {
+    return (
+      <AuthCard>
+        <CheckInbox email={registeredEmail} title="Confirm your email" />
+        <p className="foot" style={{ marginTop: 8 }}>
+          Already confirmed? <Link to="/login">Sign in</Link>
+        </p>
+      </AuthCard>
+    );
+  }
+
   return (
-    <div className="auth">
-      <Logo />
-      <form className="card authbox" onSubmit={submit}>
+    <AuthCard>
+      <form onSubmit={submit}>
         <h1>Create your account</h1>
         <p className="sub">Free to start. No credit card required.</p>
         <label htmlFor="name">Name</label>
@@ -85,6 +102,6 @@ export function Register() {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </form>
-    </div>
+    </AuthCard>
   );
 }

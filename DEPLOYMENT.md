@@ -75,6 +75,7 @@ Set the full `.env` (see `.env.example`). Critical in production:
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | long random, distinct |
 | `SMTP_HOSTNAME` | must match PTR |
 | `BOUNCE_DOMAIN` | must have SPF + MX per §2 |
+| `MAIL_FROM`, `SYSTEM_SMTP_HOST/PORT/USER/PASS` | **required** — accounts can't sign in until they click the emailed verification link, and password resets are emailed too. Use a dedicated SMTP credential on this relay; its organization needs the `MAIL_FROM` domain verified, and these emails count toward that organization's quota. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | live keys; without them paid plans cannot be bought |
 | `RAZORPAY_WEBHOOK_SECRET` | from the `order.paid` webhook pointing at `/api/webhooks/razorpay` |
 | `DELIVERY_MX_OVERRIDE` | **must be empty** in production |

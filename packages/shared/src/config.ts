@@ -34,6 +34,14 @@ const apiSchema = sharedSchema.extend({
   MAIL_SPF_INCLUDE: z.string().optional(),
   // Hostname customers point their SMTP client at. Defaults to the API host.
   SMTP_PUBLIC_HOST: z.string().optional(),
+  // Transactional mail (verification, password reset) is sent through an SMTP server —
+  // normally this service's own relay with a dedicated credential. Unset host: emails
+  // are logged instead of sent (fine in development, an error in production).
+  MAIL_FROM: z.string().default('SMTP SaaS <no-reply@localhost>'),
+  SYSTEM_SMTP_HOST: z.string().optional(),
+  SYSTEM_SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SYSTEM_SMTP_USER: z.string().optional(),
+  SYSTEM_SMTP_PASS: z.string().optional(),
 });
 
 const smtpSchema = sharedSchema.extend({

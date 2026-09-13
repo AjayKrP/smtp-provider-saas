@@ -1,11 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  api,
-  getAccessToken,
-  setAccessToken,
-  setAuthLostHandler,
-} from '../api/client.js';
+import { api, getAccessToken, setAccessToken, setAuthLostHandler } from '../api/client.js';
 
 interface AuthState {
   authenticated: boolean;
@@ -16,6 +11,8 @@ interface AuthState {
     name: string;
     organizationName?: string;
   }) => Promise<void>;
+  /** Sign in with an access token obtained elsewhere (e.g. from email verification). */
+  startSession: (accessToken: string) => void;
   logout: () => Promise<void>;
 }
 
@@ -50,13 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applyToken],
   );
 
-  const register = useCallback<AuthState['register']>(
-    async (input) => {
-      const { data } = await api.post<{ accessToken: string }>('/auth/register', input);
-      applyToken(data.accessToken);
-    },
-    [applyToken],
-  );
+  // Creates the account and emails a verification link; there is no session until the
+  // user follows it.
+  const register = useCallback<AuthState['register']>(async (input) => {
+    await api.post('/auth/register', input);
+  }, []);
 
   const logout = useCallback(async () => {
     await api.post('/auth/logout').catch(() => undefined);
@@ -66,8 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [qc]);
 
   const value = useMemo<AuthState>(
-    () => ({ authenticated, login, register, logout }),
-    [authenticated, login, register, logout],
+    () => ({ authenticated, login, register, startSession: applyToken, logout }),
+    [authenticated, login, register, applyToken, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
