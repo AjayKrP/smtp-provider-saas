@@ -123,7 +123,7 @@ const sections: LegalSection[] = [
           <li>
             Paid plans are prepaid for one month at a time at the price shown when you pay,
             including any applicable taxes. Plans do not renew automatically; when a paid month ends
-            your account moves to the Free plan’s limits until you pay again.
+            your account moves to the free Vibe plan’s limits until you pay again.
           </li>
           <li>
             Payments are processed by Razorpay. We never receive or store your card, UPI or bank

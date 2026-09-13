@@ -22,7 +22,7 @@ export interface PlanDefinition {
 export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     key: 'free',
-    name: 'Free',
+    name: 'Vibe',
     paid: false,
     monthlyEmailQuota: 500,
     maxDomains: 1,
@@ -32,7 +32,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   },
   {
     key: 'starter',
-    name: 'Starter',
+    name: 'Ship',
     paid: true,
     monthlyEmailQuota: 50_000,
     maxDomains: 3,
@@ -43,7 +43,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   },
   {
     key: 'growth',
-    name: 'Growth',
+    name: 'Scale',
     paid: true,
     monthlyEmailQuota: 500_000,
     maxDomains: 10,

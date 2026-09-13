@@ -18,7 +18,7 @@ const FAQ = [
   },
   {
     q: 'How does billing work?',
-    a: 'Plans are prepaid one month at a time through Razorpay — pay with UPI, cards, netbanking or wallets. Nothing renews automatically: when a month ends you move to the Free limits until you pay again.',
+    a: 'Plans are prepaid one month at a time through Razorpay — pay with UPI, cards, netbanking or wallets. Nothing renews automatically: when a month ends you move to the free Vibe plan’s limits until you pay again.',
   },
   {
     q: 'Can I change plans later?',

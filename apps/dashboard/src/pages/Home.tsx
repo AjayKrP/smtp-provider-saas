@@ -45,7 +45,7 @@ export function Home() {
       {u?.planExpired && (
         <div className="banner">
           <span>
-            Your paid plan has expired, so the Free plan&apos;s limits apply until you renew.
+            Your paid plan has expired, so the free Vibe plan&apos;s limits apply until you renew.
           </span>
           <Link to="/billing" className="btn sm">
             Renew

@@ -82,13 +82,13 @@ export function Billing() {
                   {planName(sub.planKey)} plan <span className="badge err">expired</span>
                 </h2>
                 <p>
-                  Ended on {day(sub.currentPeriodEnd)}. You&apos;re on the Free plan&apos;s limits
-                  until you renew.
+                  Ended on {day(sub.currentPeriodEnd)}. You&apos;re on the free {planName('free')}{' '}
+                  plan&apos;s limits until you renew.
                 </p>
               </>
             ) : (
               <>
-                <h2>Free plan</h2>
+                <h2>{planName('free')} plan</h2>
                 <p>
                   {usage.data
                     ? `${usage.data.remaining.toLocaleString()} of ${usage.data.monthlyEmailQuota.toLocaleString()} emails left this month`
