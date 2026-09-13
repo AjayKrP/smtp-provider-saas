@@ -65,3 +65,28 @@ export function passwordResetEmail(to: string, name: string, link: string): Outg
     ),
   };
 }
+
+/**
+ * Sent instead of an error when someone registers with an email that already has a
+ * verified account, so the signup form never reveals which emails are registered.
+ */
+export function accountExistsEmail(
+  to: string,
+  name: string,
+  signInLink: string,
+  resetLink: string,
+): OutgoingMail {
+  const hi = `Hi ${name},`;
+  return {
+    to,
+    subject: `You already have a ${BRAND} account`,
+    text: `${hi}\n\nSomeone just tried to create a ${BRAND} account with this email address, but you already have one.\n\nSign in: ${signInLink}\nForgot your password? Choose a new one (link valid for 1 hour): ${resetLink}\n\nIf this wasn't you, you can ignore this email - nothing has changed.`,
+    html: layout(
+      'You already have an account',
+      `${escapeHtml(hi)} someone just tried to sign up for ${BRAND} with this email address, but you already have an account. If that was you, sign in — or reset your password with the button below.`,
+      'Reset password',
+      resetLink,
+      `Remembered it? <a href="${escapeHtml(signInLink)}" style="color:#4f46e5">Sign in</a>. If this wasn't you, you can ignore this email — nothing has changed.`,
+    ),
+  };
+}

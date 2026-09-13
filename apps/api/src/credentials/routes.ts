@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { Types } from 'mongoose';
 import {
   SmtpCredentialModel,
   generateSmtpPassword,
@@ -68,6 +69,7 @@ credentialsRouter.post('/', validateBody(createSchema), async (req, res) => {
 
 credentialsRouter.delete('/:id', async (req, res) => {
   const { organizationId } = auth(req);
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw ApiError.notFound('Credential not found');
   const doc = await SmtpCredentialModel.findOne({ _id: req.params.id, organizationId });
   if (!doc) throw ApiError.notFound('Credential not found');
   await doc.deleteOne();

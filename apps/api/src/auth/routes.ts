@@ -4,7 +4,7 @@ import { UserModel, OrganizationModel, logger, mongoose, type UserDoc } from '@s
 import { env, isProd } from '../env.js';
 import { ApiError } from '../http/errors.js';
 import { validateBody } from '../http/validate.js';
-import { passwordResetEmail, verificationEmail } from '../mail/templates.js';
+import { accountExistsEmail, passwordResetEmail, verificationEmail } from '../mail/templates.js';
 import { sendMail } from '../mail/mailer.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeLinkToken, issueLinkToken, issuedRecently } from './linkTokens.js';
@@ -54,25 +54,49 @@ function issueSession(
  * caller's response must not depend on (or reveal) mail delivery, and the user can
  * ask for another link.
  */
-async function sendLink(user: UserDoc, purpose: 'verify_email' | 'reset_password'): Promise<void> {
+async function sendLink(
+  user: UserDoc,
+  kind: 'verify_email' | 'reset_password' | 'account_exists',
+): Promise<void> {
   try {
+    const purpose = kind === 'verify_email' ? 'verify_email' : 'reset_password';
     const token = await issueLinkToken(user._id, purpose);
     const path = purpose === 'verify_email' ? 'verify-email' : 'reset-password';
     const link = `${env.DASHBOARD_URL}/${path}?token=${encodeURIComponent(token)}`;
-    const build = purpose === 'verify_email' ? verificationEmail : passwordResetEmail;
-    await sendMail(build(user.email, user.name, link));
+    const mail =
+      kind === 'verify_email'
+        ? verificationEmail(user.email, user.name, link)
+        : kind === 'reset_password'
+          ? passwordResetEmail(user.email, user.name, link)
+          : accountExistsEmail(user.email, user.name, `${env.DASHBOARD_URL}/login`, link);
+    await sendMail(mail);
   } catch (err) {
-    logger.error({ err, userId: user._id.toString(), purpose }, 'failed to send auth email');
+    logger.error({ err, userId: user._id.toString(), kind }, 'failed to send auth email');
   }
 }
 
 authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   const body = req.body as z.infer<typeof registerSchema>;
 
-  const existing = await UserModel.findOne({ email: body.email }).lean();
-  if (existing) throw ApiError.conflict('An account with that email already exists');
-
+  // Hash first so new and already-registered emails take about the same time.
   const passwordHash = await hashPassword(body.password);
+  const pending = { verificationRequired: true, email: body.email };
+
+  // Never reveal that an email is registered: answer exactly as for a new account and
+  // tell the real owner by email instead (at most once per cooldown).
+  const existing = await UserModel.findOne({ email: body.email });
+  if (existing) {
+    if (!existing.emailVerifiedAt) {
+      if (!(await issuedRecently(existing._id, 'verify_email'))) {
+        await sendLink(existing, 'verify_email');
+      }
+    } else if (!(await issuedRecently(existing._id, 'reset_password'))) {
+      await sendLink(existing, 'account_exists');
+    }
+    res.status(201).json(pending);
+    return;
+  }
+
   const orgId = new mongoose.Types.ObjectId();
   const userId = new mongoose.Types.ObjectId();
 
@@ -95,6 +119,13 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
         { session },
       );
     });
+  } catch (err) {
+    // Lost a race with a concurrent signup for the same email: same answer as above.
+    if ((err as { code?: number }).code === 11000) {
+      res.status(201).json(pending);
+      return;
+    }
+    throw err;
   } finally {
     await session.endSession();
   }
@@ -102,7 +133,7 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   const user = await UserModel.findById(userId);
   if (user) await sendLink(user, 'verify_email');
   // No session until the address is confirmed.
-  res.status(201).json({ verificationRequired: true, email: body.email });
+  res.status(201).json(pending);
 });
 
 authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
