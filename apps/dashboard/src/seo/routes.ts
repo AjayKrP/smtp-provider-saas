@@ -27,8 +27,6 @@ export interface SeoRoute {
   jsonLd?: unknown[];
 }
 
-const TAGLINE = 'Hassle-free email for vibe-coded apps';
-
 const organization = {
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
@@ -88,45 +86,49 @@ const faqPage = {
 export const SEO_ROUTES: SeoRoute[] = [
   {
     path: '/',
-    title: `${BRAND} — ${TAGLINE}`,
+    title: 'SMTP Email for AI-Built Apps — Email4VibeCoder',
     description:
-      'Transactional email for apps built with Cursor, Claude, Lovable or Bolt. Four SMTP settings or one pasted prompt and your app sends sign-up, password-reset and receipt emails. 500 emails a month free.',
+      'Transactional email for apps built with Cursor, Claude or Lovable. Four SMTP settings, or paste one prompt. 500 emails a month free, no card.',
     priority: '1.0',
     changefreq: 'weekly',
     jsonLd: [organization, website, product],
   },
   {
     path: '/pricing',
-    title: `Pricing — ${BRAND}`,
+    title: 'Pricing — SMTP Email Plans from Free | Email4VibeCoder',
     description:
-      'Affordable transactional email pricing. Start free with 500 emails a month, then prepay a month at a time with UPI or cards. No auto-renewal, no per-seat fees and no overage charges.',
+      'Affordable transactional email. Start free with 500 emails a month, then prepay monthly with UPI or cards. No auto-renewal and no overage fees.',
     priority: '0.9',
     changefreq: 'weekly',
     jsonLd: [faqPage],
   },
   {
     path: '/terms',
-    title: `Terms of Service — ${BRAND}`,
-    description: `The terms that govern your use of ${BRAND}: acceptable use and anti-spam rules, prepaid billing, suspension and liability.`,
+    title: 'Terms of Service — Email4VibeCoder',
+    description:
+      'The terms governing Email4VibeCoder: acceptable use and anti-spam rules, prepaid billing, suspension, liability and governing law.',
     priority: '0.3',
     changefreq: 'yearly',
   },
   {
     path: '/privacy',
-    title: `Privacy Policy — ${BRAND}`,
-    description: `How ${BRAND} handles your data: what we store, who we share it with, and how long we keep email content and delivery logs.`,
+    title: 'Privacy Policy — Email4VibeCoder',
+    description:
+      'How Email4VibeCoder handles your data: what we store, who we share it with, and how long we keep email content and delivery logs.',
     priority: '0.3',
     changefreq: 'yearly',
   },
   {
     path: '/login',
-    title: `Sign in — ${BRAND}`,
-    description: `Sign in to your ${BRAND} account to manage sending domains, SMTP credentials and delivery logs.`,
+    title: 'Sign in — Email4VibeCoder',
+    description:
+      'Sign in to manage your sending domains, SMTP credentials, delivery logs and billing.',
   },
   {
     path: '/register',
-    title: `Create your account — ${BRAND}`,
-    description: `Create a free ${BRAND} account and send 500 emails a month with no credit card.`,
+    title: 'Create a free account — Email4VibeCoder',
+    description:
+      'Create a free Email4VibeCoder account and send 500 emails a month over SMTP, with no credit card required.',
     priority: '0.8',
     changefreq: 'monthly',
   },
