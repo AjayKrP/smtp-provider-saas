@@ -1192,6 +1192,22 @@ pre {
 .doc-content {
   max-width: 720px;
   line-height: 1.7;
+  /* Grid and flex children default to min-width:auto, so a wide <pre> or table stretches
+     the column instead of scrolling inside it, and the whole page scrolls sideways. */
+  min-width: 0;
+}
+.doc-content pre {
+  max-width: 100%;
+}
+/* Tables get their own scroller rather than widening the page. */
+.doc-table {
+  display: block;
+  overflow-x: auto;
+}
+.doc-table tbody,
+.doc-table thead {
+  display: table;
+  width: 100%;
 }
 .doc-content section {
   scroll-margin-top: 80px;
@@ -1261,6 +1277,21 @@ pre {
   white-space: normal;
   min-width: 190px;
 }
+/* That min-width is wider than a phone once padding is taken off, which made the whole
+   page scroll sideways. Let the column shrink and the reply code wrap instead. */
+@media (max-width: 560px) {
+  .doc-table td,
+  .doc-table th {
+    font-size: 13px;
+  }
+  .doc-table.errors td:first-child {
+    min-width: 0;
+  }
+  .doc-table td:first-child {
+    white-space: normal;
+    padding-right: 12px;
+  }
+}
 
 .doc-note {
   margin-top: 14px;
@@ -1279,6 +1310,20 @@ pre {
     padding: 14px 16px;
     border: 1px solid var(--border);
     border-radius: 10px;
+  }
+}
+
+/* Below this the wordmark cannot coexist with the links and the two buttons, so keep
+   the logo mark (still a link home) and let the name live in the page and footer. */
+@media (max-width: 480px) {
+  .site-nav .logo > span:last-child {
+    display: none;
+  }
+  .site-nav .links a {
+    padding: 6px 5px;
+  }
+  .site-nav .btn.sm {
+    padding: 0 8px;
   }
 }
 
@@ -1360,8 +1405,8 @@ pre {
     padding: 10px 14px;
   }
   .site-nav .inner {
-    padding: 10px 16px;
-    gap: 12px;
+    padding: 10px 14px;
+    gap: 8px;
   }
   .site-nav .links {
     gap: 0;
@@ -1369,6 +1414,12 @@ pre {
   }
   .site-nav .links a {
     padding: 6px 7px;
+  }
+  /* The header must stay one line: .row wraps by default, which stacked "Sign in"
+     above "Get started" and pushed the button off-screen on phones. */
+  .site-nav .inner > .row {
+    flex-wrap: nowrap;
+    gap: 6px;
   }
   .site-nav .inner > .row {
     margin-left: auto;
