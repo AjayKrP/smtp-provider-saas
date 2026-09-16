@@ -395,14 +395,14 @@ if service_changed "worker" "apps/worker/"; then
     deploy_worker
 fi
 
-# deploy/nginx-smtp.ajaykrp.me.conf is a reference copy - the live installed
+# deploy/nginx-email4vibecoder.com.conf is a reference copy - the live installed
 # file at /etc/nginx/sites-enabled/ has been rewritten by certbot to add the
 # TLS server block, so overwriting it automatically would destroy that.
 # Flag it for manual reconciliation instead. Its own marker only tracks
 # whether we've already warned about the current content, not a deploy.
-if service_changed "nginx-smtp-ref" "deploy/nginx-smtp.ajaykrp.me.conf"; then
-    echo "==> deploy/nginx-smtp.ajaykrp.me.conf changed - this is a reference copy only (certbot has since rewritten the live file with the TLS block). Reconcile /etc/nginx/sites-enabled/smtp.ajaykrp.me.conf by hand."
-    mark_deployed "nginx-smtp-ref"
+if service_changed "nginx-site-ref" "deploy/nginx-email4vibecoder.com.conf"; then
+    echo "==> deploy/nginx-email4vibecoder.com.conf changed - this is a reference copy only (certbot has since rewritten the live file with the TLS block). Reconcile /etc/nginx/sites-enabled/email4vibecoder.com.conf by hand."
+    mark_deployed "nginx-site-ref"
 fi
 
 if [[ "$DEPLOYED_ANY" == "false" && "$FAILED_ANY" == "false" ]]; then

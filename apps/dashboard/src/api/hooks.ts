@@ -79,8 +79,24 @@ export interface MessageSummary {
 
 const get = <T>(url: string) => api.get<T>(url).then((r) => r.data);
 
+export interface PublicConfig {
+  /** Hostname customers point their SMTP client at — not the website's hostname. */
+  smtpHost: string;
+  smtpPorts: { starttls: number; tls: number };
+  supportEmail: string;
+}
+
+/** Public settings; safe to fetch signed out. Cached for the session. */
+export const usePublicConfig = () =>
+  useQuery({
+    queryKey: ['config'],
+    queryFn: () => get<PublicConfig>('/config'),
+    staleTime: Infinity,
+  });
+
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => get<Me>('/auth/me') });
-export const usePlans = () => useQuery({ queryKey: ['plans'], queryFn: () => get<Plan[]>('/plans') });
+export const usePlans = () =>
+  useQuery({ queryKey: ['plans'], queryFn: () => get<Plan[]>('/plans') });
 export const useUsage = () =>
   useQuery({ queryKey: ['usage'], queryFn: () => get<Usage>('/usage/current') });
 export const useDomains = () =>
@@ -108,7 +124,9 @@ export function useVerifyDomain() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api.post<Domain & { verification: Record<string, string> }>(`/domains/${id}/verify`).then((r) => r.data),
+      api
+        .post<Domain & { verification: Record<string, string> }>(`/domains/${id}/verify`)
+        .then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['domains'] }),
   });
 }
@@ -124,7 +142,12 @@ export function useDeleteDomain() {
 export interface CreatedCredential {
   id: string;
   label: string;
-  smtp: { host: string; ports: { starttls: number; tls: number }; username: string; password: string };
+  smtp: {
+    host: string;
+    ports: { starttls: number; tls: number };
+    username: string;
+    password: string;
+  };
 }
 
 export function useCreateCredential() {
@@ -166,7 +189,10 @@ export interface PaymentRecord {
 }
 
 export const useSubscription = () =>
-  useQuery({ queryKey: ['subscription'], queryFn: () => get<SubscriptionInfo>('/billing/subscription') });
+  useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => get<SubscriptionInfo>('/billing/subscription'),
+  });
 export const usePayments = () =>
   useQuery({ queryKey: ['payments'], queryFn: () => get<PaymentRecord[]>('/billing/payments') });
 

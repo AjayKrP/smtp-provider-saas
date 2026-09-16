@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { usePlans } from '../api/hooks.js';
+import { usePlans, usePublicConfig } from '../api/hooks.js';
 import { CopyButton, Icon, money, type IconName } from '../components/bits.js';
 import { PricingSection } from './Pricing.js';
 
@@ -164,7 +164,8 @@ function CodeShowcase({ host }: { host: string }) {
 }
 
 export function Landing() {
-  const host = window.location.hostname;
+  // Placeholder only until /config loads; the site and the mail server are different hosts.
+  const host = usePublicConfig().data?.smtpHost ?? 'smtp.email4vibecoder.com';
   const { data: plans } = usePlans();
   // Quote the cheapest paid plan straight from the synced prices, never a literal.
   const cheapest = plans

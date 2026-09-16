@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
-export const LEGAL_CONTACT = 'hello@ajaykrp.me';
+import { usePublicConfig } from '../api/hooks.js';
 
 export interface LegalSection {
   id: string;
@@ -74,6 +73,8 @@ export function LegalPage({
   );
 }
 
-export function Mail({ address = LEGAL_CONTACT }: { address?: string }) {
-  return <a href={`mailto:${address}`}>{address}</a>;
+/** The support address, straight from the server's MAIL_FROM. */
+export function Mail({ address }: { address?: string } = {}) {
+  const email = address ?? usePublicConfig().data?.supportEmail ?? '';
+  return email ? <a href={`mailto:${email}`}>{email}</a> : <>our support address</>;
 }

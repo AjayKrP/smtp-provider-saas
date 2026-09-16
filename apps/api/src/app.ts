@@ -9,6 +9,7 @@ import { env } from './env.js';
 import { errorHandler } from './http/errors.js';
 import { authRouter } from './auth/routes.js';
 import { plansRouter } from './plans/routes.js';
+import { configRouter } from './config/routes.js';
 import { billingRouter } from './billing/routes.js';
 import { razorpayWebhookRouter } from './billing/webhook.js';
 import { domainsRouter } from './domains/routes.js';
@@ -40,6 +41,7 @@ export function createApp(): Express {
 
   const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 50, standardHeaders: true });
   app.use('/auth', authLimiter, authRouter);
+  app.use('/config', configRouter);
   app.use('/plans', plansRouter);
   app.use('/billing', billingRouter);
   app.use('/domains', domainsRouter);

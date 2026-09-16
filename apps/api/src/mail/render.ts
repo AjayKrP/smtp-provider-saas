@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Handlebars from 'handlebars';
 import { env } from '../env.js';
+import { mailSender } from './sender.js';
 
 /**
  * Email templates live as files in ./templates — never as strings in code:
@@ -104,21 +105,13 @@ function compile(name: string): Compiled {
   return compiled;
 }
 
-/** Brand and support address come from MAIL_FROM, e.g. `Email4VibeCoder <hello@…>`. */
-function sender(): { brand: string; supportEmail: string } {
-  const match = /^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/.exec(env.MAIL_FROM);
-  return match
-    ? { brand: match[1]!.trim(), supportEmail: match[2]!.trim() }
-    : { brand: env.MAIL_FROM, supportEmail: env.MAIL_FROM };
-}
-
 export function renderEmail<N extends EmailTemplateName>(
   name: N,
   data: EmailTemplates[N],
 ): RenderedEmail {
   const t = compile(name);
   const context = {
-    ...sender(),
+    ...mailSender(),
     appUrl: env.DASHBOARD_URL.replace(/\/$/, ''),
     year: new Date().getFullYear(),
     ...data,

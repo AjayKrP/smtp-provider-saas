@@ -7,7 +7,7 @@
 #   /etc/letsencrypt/renewal-hooks/deploy/smtp-saas-certs.sh
 set -euo pipefail
 
-DOMAIN="${SMTP_CERT_DOMAIN:-smtp.ajaykrp.me}"
+DOMAIN="${SMTP_CERT_DOMAIN:-smtp.email4vibecoder.com}"
 DEST="${SMTP_CERT_DEST:-/opt/smtp-provider-saas/certs}"
 SRC="/etc/letsencrypt/live/${DOMAIN}"
 
@@ -22,7 +22,16 @@ chmod 0750 "$DEST"
 
 echo "synced $DOMAIN cert to $DEST"
 
-# Restart the ingress so it picks up the renewed pair (it reads the PEMs at boot).
-if command -v docker >/dev/null && docker inspect smtpsaas-ingress >/dev/null 2>&1; then
-  docker restart smtpsaas-ingress >/dev/null && echo "restarted smtpsaas-ingress"
+# Restart whichever ingress slot is live so it picks up the renewed pair (it reads the
+# PEMs at boot). Resolve the slot from deploy state rather than naming a container: the
+# pre-blue/green `smtpsaas-ingress` is retired, and restarting it would silently leave
+# the running slot serving the expired cert until the next deploy.
+STATE_FILE="${SMTP_INGRESS_SLOT_FILE:-/opt/smtp-provider-saas/deploy/state/smtp-ingress.slot}"
+if command -v docker >/dev/null && [ -r "$STATE_FILE" ]; then
+  CONTAINER="smtpsaas_ingress_$(cat "$STATE_FILE")"
+  if docker inspect "$CONTAINER" >/dev/null 2>&1; then
+    docker restart "$CONTAINER" >/dev/null && echo "restarted $CONTAINER"
+  else
+    echo "WARNING: $CONTAINER not found; restart the smtp ingress by hand" >&2
+  fi
 fi
