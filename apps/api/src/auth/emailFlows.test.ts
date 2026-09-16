@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import type { Express } from 'express';
 import request from 'supertest';
@@ -14,6 +14,7 @@ vi.mock('../mail/mailer.js', () => ({
 let replSet: MongoMemoryReplSet;
 let app: Express;
 let models: typeof import('@smtp-saas/shared');
+let flushBackgroundMail: () => Promise<unknown>;
 
 const linkToken = (mail: { text: string }) => {
   const match = /token=([A-Za-z0-9_%-]+)/.exec(mail.text);
@@ -43,6 +44,7 @@ beforeAll(async () => {
     models.AuthTokenModel.init(),
     models.OrganizationModel.init(),
   ]);
+  ({ flushBackgroundMail } = await import('../mail/send.js'));
   app = (await import('../app.js')).createApp();
 }, 120_000);
 
@@ -51,7 +53,13 @@ afterAll(async () => {
   await replSet.stop();
 });
 
+afterEach(async () => {
+  // Auth emails are sent outside the request, so let them settle between tests.
+  await flushBackgroundMail();
+});
+
 beforeEach(async () => {
+  await flushBackgroundMail();
   sent.length = 0;
   await Promise.all([
     models.UserModel.deleteMany({}),
@@ -62,15 +70,18 @@ beforeEach(async () => {
 
 async function registerAndVerify() {
   await request(app).post('/auth/register').send(account).expect(201);
+  await flushBackgroundMail();
   return request(app)
     .post('/auth/verify-email')
     .send({ token: linkToken(sent[0]!) })
     .expect(200);
+  await flushBackgroundMail();
 }
 
 describe('email verification', () => {
   it('registers without a session and emails a verification link', async () => {
     const res = await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
     expect(res.body).toEqual({ verificationRequired: true, email: 'ada@example.com' });
     expect(res.body.accessToken).toBeUndefined();
     expect(sent).toHaveLength(1);
@@ -80,15 +91,18 @@ describe('email verification', () => {
 
   it('answers a duplicate signup exactly like a new one and emails the owner instead', async () => {
     const first = await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
     await request(app)
       .post('/auth/verify-email')
       .send({ token: linkToken(sent[0]!) })
       .expect(200);
+    await flushBackgroundMail();
 
     const again = await request(app)
       .post('/auth/register')
       .send({ ...account, password: 'an-attackers-password', name: 'Mallory' })
       .expect(201);
+    await flushBackgroundMail();
     expect(again.body).toEqual(first.body);
     expect(sent.at(-1)!.subject).toMatch(/already have/i);
     expect(sent.at(-1)!.text).toContain('http://app.test/reset-password?token=');
@@ -104,6 +118,7 @@ describe('email verification', () => {
 
   it('refuses login until verified, but only after a correct password', async () => {
     await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
     await request(app)
       .post('/auth/login')
       .send({ ...account, password: 'wrong-password' })
@@ -114,10 +129,13 @@ describe('email verification', () => {
 
   it('verifies via the link, signs the user in, and the link is single-use', async () => {
     await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
     const token = linkToken(sent[0]!);
     const verified = await request(app).post('/auth/verify-email').send({ token }).expect(200);
+    await flushBackgroundMail();
     expect(verified.body.accessToken).toEqual(expect.any(String));
     await request(app).post('/auth/verify-email').send({ token }).expect(400);
+    await flushBackgroundMail();
     await request(app).post('/auth/login').send(account).expect(200);
 
     // Exactly one welcome email, sent on first verification.
@@ -128,14 +146,17 @@ describe('email verification', () => {
 
   it('resends only to unverified accounts, never reveals account existence, and throttles', async () => {
     await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
     const unknown = await request(app)
       .post('/auth/resend-verification')
       .send({ email: 'nobody@example.com' })
       .expect(200);
+    await flushBackgroundMail();
     const throttled = await request(app)
       .post('/auth/resend-verification')
       .send({ email: account.email })
       .expect(200);
+    await flushBackgroundMail();
     expect(unknown.body).toEqual(throttled.body);
     expect(sent).toHaveLength(1); // within the cooldown of the registration email
 
@@ -145,16 +166,19 @@ describe('email verification', () => {
       { $set: { createdAt: new Date(Date.now() - 120_000) } },
     );
     await request(app).post('/auth/resend-verification').send({ email: account.email }).expect(200);
+    await flushBackgroundMail();
     expect(sent).toHaveLength(2);
     // The newest link works; the older one was revoked when it was redeemed.
     await request(app)
       .post('/auth/verify-email')
       .send({ token: linkToken(sent[1]!) })
       .expect(200);
+    await flushBackgroundMail();
     await request(app)
       .post('/auth/verify-email')
       .send({ token: linkToken(sent[0]!) })
       .expect(400);
+    await flushBackgroundMail();
   });
 });
 
@@ -164,6 +188,7 @@ describe('password reset', () => {
       .post('/auth/forgot-password')
       .send({ email: 'nobody@example.com' })
       .expect(200);
+    await flushBackgroundMail();
     expect(res.body).toEqual({ ok: true });
     expect(sent).toHaveLength(0);
   });
@@ -174,6 +199,7 @@ describe('password reset', () => {
     await request(app).post('/auth/refresh').set('Cookie', oldCookie).expect(200);
 
     await request(app).post('/auth/forgot-password').send({ email: account.email }).expect(200);
+    await flushBackgroundMail();
     const token = linkToken(sent.at(-1)!);
     expect(sent.at(-1)!.text).toContain('http://app.test/reset-password?token=');
 
@@ -198,6 +224,7 @@ describe('password reset', () => {
   it('rejects expired reset links', async () => {
     await registerAndVerify();
     await request(app).post('/auth/forgot-password').send({ email: account.email }).expect(200);
+    await flushBackgroundMail();
     await models.AuthTokenModel.updateMany(
       { purpose: 'reset_password' },
       { $set: { expiresAt: new Date(Date.now() - 1000) } },
@@ -223,6 +250,7 @@ describe('existing accounts', () => {
       createdAt,
     });
     await request(app).post('/auth/register').send(account).expect(201);
+    await flushBackgroundMail();
 
     await grandfatherVerifiedEmails();
 
@@ -246,6 +274,7 @@ describe('rate limiting', () => {
             .send({ email: 'nobody@example.com' })
         ).headers['ratelimit-remaining'],
       );
+    await flushBackgroundMail();
 
     const a1 = await remaining('203.0.113.10');
     const a2 = await remaining('203.0.113.10');
@@ -258,6 +287,7 @@ describe('rate limiting', () => {
       .post('/auth/forgot-password')
       .set('X-Forwarded-For', '9.9.9.9, 203.0.113.10, 172.18.0.1')
       .send({ email: 'nobody@example.com' });
+    await flushBackgroundMail();
     expect(Number(spoofed.headers['ratelimit-remaining'])).toBe(a2 - 1);
   });
 });

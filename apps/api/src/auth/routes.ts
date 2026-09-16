@@ -13,7 +13,7 @@ import { env, isProd } from '../env.js';
 import { ApiError } from '../http/errors.js';
 import { validateBody } from '../http/validate.js';
 import { formatMoney } from '../mail/format.js';
-import { sendTemplate } from '../mail/send.js';
+import { sendInBackground, sendTemplate } from '../mail/send.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { consumeLinkToken, issueLinkToken, issuedRecently } from './linkTokens.js';
 import { REFRESH_COOKIE, signAccessToken, signRefreshToken, verifyRefreshToken } from './tokens.js';
@@ -126,10 +126,10 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   if (existing) {
     if (!existing.emailVerifiedAt) {
       if (!(await issuedRecently(existing._id, 'verify_email'))) {
-        await sendLink(existing, 'verify_email');
+        sendInBackground(sendLink(existing, 'verify_email'));
       }
     } else if (!(await issuedRecently(existing._id, 'reset_password'))) {
-      await sendLink(existing, 'account_exists');
+      sendInBackground(sendLink(existing, 'account_exists'));
     }
     res.status(201).json(pending);
     return;
@@ -169,7 +169,7 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   }
 
   const user = await UserModel.findById(userId);
-  if (user) await sendLink(user, 'verify_email');
+  if (user) sendInBackground(sendLink(user, 'verify_email'));
   // No session until the address is confirmed.
   res.status(201).json(pending);
 });
@@ -204,7 +204,7 @@ authRouter.post('/verify-email', validateBody(tokenSchema), async (req, res) => 
     { new: true },
   );
   if (!user) throw ApiError.badRequest('This verification link is invalid or has expired.');
-  if (before && !before.emailVerifiedAt) await sendWelcome(user);
+  if (before && !before.emailVerifiedAt) sendInBackground(sendWelcome(user));
   // The link proves control of the inbox, so sign the user straight in.
   res.json(issueSession(res, user));
 });
@@ -216,7 +216,7 @@ const GENERIC_OK = { ok: true };
 authRouter.post('/resend-verification', validateBody(emailOnlySchema), async (req, res) => {
   const user = await UserModel.findOne({ email: (req.body as { email: string }).email });
   if (user && !user.emailVerifiedAt && !(await issuedRecently(user._id, 'verify_email'))) {
-    await sendLink(user, 'verify_email');
+    sendInBackground(sendLink(user, 'verify_email'));
   }
   res.json(GENERIC_OK);
 });
@@ -224,7 +224,7 @@ authRouter.post('/resend-verification', validateBody(emailOnlySchema), async (re
 authRouter.post('/forgot-password', validateBody(emailOnlySchema), async (req, res) => {
   const user = await UserModel.findOne({ email: (req.body as { email: string }).email });
   if (user && !(await issuedRecently(user._id, 'reset_password'))) {
-    await sendLink(user, 'reset_password');
+    sendInBackground(sendLink(user, 'reset_password'));
   }
   res.json(GENERIC_OK);
 });
