@@ -20,4 +20,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-expressions': 'off',
     },
   },
+  {
+    // Build scripts run in Node, outside the TypeScript projects.
+    files: ['**/scripts/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly' },
+    },
+  },
 );

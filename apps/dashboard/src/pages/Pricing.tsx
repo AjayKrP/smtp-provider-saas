@@ -4,14 +4,21 @@ import { PlanCards } from '../components/PlanCards.js';
 import { Icon } from '../components/bits.js';
 import { FAQ } from '../content/faq.js';
 
-
-export function PricingSection({ id }: { id?: string }) {
+export function PricingSection({
+  id,
+  heading = 'h2',
+}: {
+  id?: string;
+  /** 'h1' when this section is the whole page; 'h2' when embedded below the landing H1. */
+  heading?: 'h1' | 'h2';
+}) {
+  const Heading = heading;
   const { data, isLoading } = usePlans();
   return (
     <section className="section" id={id}>
       <div className="section-head">
         <span className="eyebrow">Pricing</span>
-        <h2>Affordable pricing that grows with your app</h2>
+        <Heading>Affordable pricing that grows with your app</Heading>
         <p>
           Start free. Pay a month at a time only when you need more — no card on file, no
           auto-renew, no overage fees.
@@ -42,7 +49,7 @@ export function PricingSection({ id }: { id?: string }) {
 export function Pricing() {
   return (
     <>
-      <PricingSection />
+      <PricingSection heading="h1" />
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="section-head">
           <h2>Questions &amp; answers</h2>

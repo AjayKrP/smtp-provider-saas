@@ -2,13 +2,19 @@ import axios, { AxiosError } from 'axios';
 
 const TOKEN_KEY = 'smtp_saas_at';
 
-let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
+/**
+ * There is no localStorage while the build prerenders these pages in Node, and a
+ * prerendered page is always signed out by definition.
+ */
+const store = (): Storage | null => (typeof localStorage === 'undefined' ? null : localStorage);
+
+let accessToken: string | null = store()?.getItem(TOKEN_KEY) ?? null;
 let onAuthLost: (() => void) | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  if (token) store()?.setItem(TOKEN_KEY, token);
+  else store()?.removeItem(TOKEN_KEY);
 }
 
 export const getAccessToken = (): string | null => accessToken;
