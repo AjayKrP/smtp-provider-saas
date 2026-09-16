@@ -5,6 +5,7 @@ import { Layout } from './components/Layout.js';
 import { PublicLayout } from './components/PublicLayout.js';
 import { Landing } from './pages/Landing.js';
 import { Pricing } from './pages/Pricing.js';
+import { Docs } from './pages/Docs.js';
 import { Login } from './pages/Login.js';
 import { Register } from './pages/Register.js';
 import { ForgotPassword } from './pages/ForgotPassword.js';
@@ -28,6 +29,7 @@ export function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/docs" element={<Docs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -55,6 +57,7 @@ export function App() {
       <Route element={<PublicLayout />}>
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/docs" element={<Docs />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
       </Route>

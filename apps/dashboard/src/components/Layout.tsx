@@ -9,6 +9,7 @@ const links: [string, string, IconName][] = [
   ['/credentials', 'SMTP credentials', 'key'],
   ['/activity', 'Activity', 'activity'],
   ['/billing', 'Billing', 'card'],
+  ['/docs', 'Docs', 'code'],
 ];
 
 export function Layout() {

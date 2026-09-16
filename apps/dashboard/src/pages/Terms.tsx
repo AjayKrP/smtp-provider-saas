@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { BRAND } from '../components/bits.js';
-import { LegalPage, Mail, type LegalSection } from '../components/LegalPage.js';
+import { DocPage, Mail, type DocSection } from '../components/DocPage.js';
 
 export const LEGAL_UPDATED = '13 September 2026';
 
-const sections: LegalSection[] = [
+const sections: DocSection[] = [
   {
     id: 'agreement',
     title: 'Agreement to these terms',
@@ -259,9 +259,11 @@ const sections: LegalSection[] = [
 
 export function Terms() {
   return (
-    <LegalPage
+    <DocPage
+      eyebrow="Legal"
       title="Terms of Service"
-      updated={LEGAL_UPDATED}
+      subtitle={`Last updated ${LEGAL_UPDATED}`}
+      numbered
       intro={
         <p>
           Plain version: send only email people want, from domains you control; keep your
@@ -270,6 +272,12 @@ export function Terms() {
         </p>
       }
       sections={sections}
+      footer={
+        <>
+          Questions about this page? Email <Mail />. See also our{' '}
+          <Link to="/privacy">Privacy Policy</Link>.
+        </>
+      }
     />
   );
 }

@@ -73,6 +73,17 @@ const product = {
   },
 };
 
+const howTo = {
+  '@type': 'TechArticle',
+  '@id': `${SITE_URL}/docs#article`,
+  headline: 'How to send email over SMTP from any language or framework',
+  url: `${SITE_URL}/docs`,
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  description:
+    'Copy-paste SMTP integration examples for Node.js, Next.js, Python, Django, Laravel, Rails, Go, Spring Boot, .NET, Supabase and no-code tools, plus common SMTP error codes.',
+  proficiencyLevel: 'Beginner',
+};
+
 const faqPage = {
   '@type': 'FAQPage',
   '@id': `${SITE_URL}/pricing#faq`,
@@ -101,6 +112,15 @@ export const SEO_ROUTES: SeoRoute[] = [
     priority: '0.9',
     changefreq: 'weekly',
     jsonLd: [faqPage],
+  },
+  {
+    path: '/docs',
+    title: 'SMTP Docs for Node, Python & Django — Email4VibeCoder',
+    description:
+      'Copy-paste SMTP setup for Node.js, Next.js, Python, Django, Laravel, Rails, Go, .NET and Supabase, plus what each SMTP error code means.',
+    priority: '0.9',
+    changefreq: 'monthly',
+    jsonLd: [howTo],
   },
   {
     path: '/terms',

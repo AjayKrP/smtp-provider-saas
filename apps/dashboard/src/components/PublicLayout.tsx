@@ -12,6 +12,7 @@ export function PublicLayout() {
         <div className="inner">
           <Logo />
           <nav className="links">
+            <NavLink to="/docs">Docs</NavLink>
             <NavLink to="/pricing">Pricing</NavLink>
           </nav>
           <div className="row">
@@ -41,6 +42,9 @@ export function PublicLayout() {
             © {new Date().getFullYear()} {BRAND}
           </span>
           <span className="row">
+            <Link to="/docs" className="muted">
+              Docs
+            </Link>
             <Link to="/pricing" className="muted">
               Pricing
             </Link>

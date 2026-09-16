@@ -1140,39 +1140,39 @@ pre {
   margin-top: 8px;
 }
 
-/* Legal pages (Terms, Privacy) */
-.legal {
+/* Long-form document pages (docs, terms, privacy) */
+.doc {
   max-width: 1000px;
   padding-top: 56px;
 }
-.legal-head {
+.doc-head {
   max-width: 720px;
   margin-bottom: 40px;
 }
-.legal-head h1 {
+.doc-head h1 {
   font-size: clamp(30px, 5vw, 40px);
   font-weight: 650;
   letter-spacing: -0.03em;
   margin: 0 0 6px;
 }
-.legal-intro {
+.doc-intro {
   margin-top: 20px;
   padding: 14px 16px;
   border-radius: 10px;
   background: var(--accent-soft);
   line-height: 1.6;
 }
-.legal-body {
+.doc-body {
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 48px;
   align-items: start;
 }
-.legal-toc {
+.doc-toc {
   position: sticky;
   top: 80px;
 }
-.legal-toc ol {
+.doc-toc ol {
   list-style: none;
   padding: 0;
   margin: 8px 0 0;
@@ -1180,42 +1180,89 @@ pre {
   flex-direction: column;
   gap: 2px;
 }
-.legal-toc a {
+.doc-toc a {
   display: block;
   padding: 4px 0;
   font-size: 13px;
   color: var(--muted);
 }
-.legal-toc a:hover {
+.doc-toc a:hover {
   color: var(--text);
 }
-.legal-content {
+.doc-content {
   max-width: 720px;
   line-height: 1.7;
 }
-.legal-content section {
+.doc-content section {
   scroll-margin-top: 80px;
   margin-bottom: 32px;
 }
-.legal-content h2 {
+.doc-content h2 {
   font-size: 18px;
   margin: 0 0 10px;
 }
-.legal-content p,
-.legal-content ul {
+.doc-content p,
+.doc-content ul {
   margin: 0 0 12px;
 }
-.legal-content ul {
+.doc-content ul {
   padding-left: 20px;
 }
-.legal-content li {
+.doc-content li {
   margin-bottom: 6px;
 }
-.legal-foot {
+.doc-foot {
   border-top: 1px solid var(--border);
   padding-top: 20px;
 }
-.legal-note {
+/* Code samples inside document pages */
+.code {
+  margin: 0 0 16px;
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 0 2px 6px;
+}
+.code pre {
+  margin: 0;
+  line-height: 1.65;
+}
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 16px;
+}
+.doc-table td,
+.doc-table th {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  text-align: left;
+  vertical-align: top;
+  background: none;
+}
+.doc-table th {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.doc-table td:first-child {
+  white-space: nowrap;
+  color: var(--muted);
+  padding-right: 20px;
+}
+.doc-table.errors td:first-child {
+  white-space: normal;
+  min-width: 190px;
+}
+
+.doc-note {
   margin-top: 14px;
   font-size: 12px;
   color: var(--muted);
@@ -1223,11 +1270,11 @@ pre {
   line-height: 1.5;
 }
 @media (max-width: 800px) {
-  .legal-body {
+  .doc-body {
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  .legal-toc {
+  .doc-toc {
     position: static;
     padding: 14px 16px;
     border: 1px solid var(--border);
@@ -1317,7 +1364,11 @@ pre {
     gap: 12px;
   }
   .site-nav .links {
-    display: none;
+    gap: 0;
+    font-size: 13px;
+  }
+  .site-nav .links a {
+    padding: 6px 7px;
   }
   .site-nav .inner > .row {
     margin-left: auto;

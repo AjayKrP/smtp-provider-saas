@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { BRAND } from '../components/bits.js';
-import { LegalPage, Mail, type LegalSection } from '../components/LegalPage.js';
+import { DocPage, Mail, type DocSection } from '../components/DocPage.js';
 import { LEGAL_UPDATED } from './Terms.js';
 
-const sections: LegalSection[] = [
+const sections: DocSection[] = [
   {
     id: 'who',
     title: 'Who we are',
@@ -233,9 +233,11 @@ const sections: LegalSection[] = [
 
 export function Privacy() {
   return (
-    <LegalPage
+    <DocPage
+      eyebrow="Legal"
       title="Privacy Policy"
-      updated={LEGAL_UPDATED}
+      subtitle={`Last updated ${LEGAL_UPDATED}`}
+      numbered
       intro={
         <p>
           Plain version: we collect what we need to send your email and bill you, delete email
@@ -244,6 +246,12 @@ export function Privacy() {
         </p>
       }
       sections={sections}
+      footer={
+        <>
+          Questions about this page? Email <Mail />. See also our{' '}
+          <Link to="/terms">Terms of Service</Link>.
+        </>
+      }
     />
   );
 }
