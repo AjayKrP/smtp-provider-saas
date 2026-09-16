@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext.js';
+import { useSeo } from './seo/useSeo.js';
 import { Layout } from './components/Layout.js';
 import { PublicLayout } from './components/PublicLayout.js';
 import { Landing } from './pages/Landing.js';
@@ -19,6 +20,7 @@ import { Billing } from './pages/Billing.js';
 
 export function App() {
   const { authenticated } = useAuth();
+  useSeo();
 
   if (!authenticated) {
     return (

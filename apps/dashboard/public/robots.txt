@@ -1,0 +1,16 @@
+# Email4VibeCoder — https://email4vibecoder.com
+User-agent: *
+Allow: /
+
+# Signed-in dashboard and auth flows: no public content, and verification/reset URLs
+# carry single-use tokens that must never be fetched by a crawler.
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /domains
+Disallow: /credentials
+Disallow: /activity
+Disallow: /billing
+Disallow: /api/
+
+Sitemap: https://email4vibecoder.com/sitemap.xml
