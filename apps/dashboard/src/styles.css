@@ -325,10 +325,11 @@ select:focus {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 16px;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 .logo:hover {
   color: var(--text);
@@ -744,6 +745,24 @@ pre {
 .site-nav .links a.active {
   color: var(--text);
 }
+.site-nav .menu-toggle {
+  display: none;
+  width: 34px;
+  padding: 0;
+  color: var(--muted);
+}
+.menu-panel {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  padding: 6px 14px 10px;
+}
+.menu-panel a {
+  padding: 10px 4px;
+  font-weight: 500;
+  color: var(--text);
+}
+
 .site main {
   flex: 1;
 }
@@ -1315,15 +1334,28 @@ pre {
 
 /* Below this the wordmark cannot coexist with the links and the two buttons, so keep
    the logo mark (still a link home) and let the name live in the page and footer. */
-@media (max-width: 480px) {
-  .site-nav .logo > span:last-child {
+@media (max-width: 620px) {
+  /* Too narrow for the brand, both links and both buttons at once. Keep the brand and
+     the primary call to action visible, and move navigation into the toggle. */
+  .site-nav .links,
+  .site-nav .btn.signin {
     display: none;
   }
-  .site-nav .links a {
-    padding: 6px 5px;
+  .site-nav .menu-toggle {
+    display: inline-flex;
   }
   .site-nav .btn.sm {
-    padding: 0 8px;
+    padding: 0 10px;
+  }
+}
+@media (max-width: 380px) {
+  .site-nav .logo {
+    font-size: 14px;
+    gap: 7px;
+  }
+  .site-nav .logo-mark {
+    width: 24px;
+    height: 24px;
   }
 }
 
