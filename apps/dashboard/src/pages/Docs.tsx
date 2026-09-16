@@ -1,19 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePublicConfig } from '../api/hooks.js';
-import { CopyButton } from '../components/bits.js';
+import { CodeBlock } from '../components/CodeBlock.js';
 import { DocPage, Mail, type DocSection } from '../components/DocPage.js';
-
-function Code({ label, children }: { label: string; children: string }) {
-  return (
-    <div className="code">
-      <div className="code-head">
-        <span>{label}</span>
-        <CopyButton value={children} label={`Copy ${label}`} />
-      </div>
-      <pre>{children}</pre>
-    </div>
-  );
-}
 
 /**
  * One section per language so each can rank for its own long-tail query
@@ -66,7 +54,7 @@ MAIL_FROM="Your App <hello@yourdomain.com>"`;
             Put them in your environment rather than your source code, and never commit the
             password:
           </p>
-          <Code label=".env">{env}</Code>
+          <CodeBlock label=".env" lang="ini">{env}</CodeBlock>
           <p>
             Two rules worth knowing before your first send. The <strong>From address must be on a
             domain you have verified</strong> in <Link to="/domains">Domains</Link> — that is what
@@ -86,7 +74,7 @@ MAIL_FROM="Your App <hello@yourdomain.com>"`;
             Paste this into Cursor, Claude Code, Lovable, Bolt or Replit and it will add email to
             your app using whatever library your stack already uses:
           </p>
-          <Code label="prompt">{`Add transactional email to this app using SMTP.
+          <CodeBlock label="prompt" lang="plaintext">{`Add transactional email to this app using SMTP.
 
 Read these from environment variables (never hard-code them):
   SMTP_HOST=${host}
@@ -98,7 +86,7 @@ Read these from environment variables (never hard-code them):
 Create one sendEmail(to, subject, html) helper using this stack's
 standard SMTP library, then use it for sign-up confirmation and
 password-reset emails. Log and surface errors instead of failing
-silently.`}</Code>
+silently.`}</CodeBlock>
         </>
       ),
     },
@@ -111,7 +99,7 @@ silently.`}</Code>
             Install <code>nodemailer</code>, then reuse a single transporter — creating one per
             message opens a new connection every time.
           </p>
-          <Code label="email.js">{`import nodemailer from 'nodemailer';
+          <CodeBlock label="email.js" lang="javascript">{`import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -124,7 +112,7 @@ await transporter.sendMail({
   to: 'customer@example.com',
   subject: 'Welcome aboard!',
   html: '<p>Thanks for signing up.</p>',
-});`}</Code>
+});`}</CodeBlock>
         </>
       ),
     },
@@ -138,7 +126,7 @@ await transporter.sendMail({
             <code>export const runtime = &apos;nodejs&apos;</code>: the Edge runtime has no TCP
             sockets, so SMTP cannot work there.
           </p>
-          <Code label="app/api/send/route.ts">{`import nodemailer from 'nodemailer';
+          <CodeBlock label="app/api/send/route.ts" lang="typescript">{`import nodemailer from 'nodemailer';
 
 export const runtime = 'nodejs';
 
@@ -152,7 +140,7 @@ export async function POST(req: Request) {
   const { to, subject, html } = await req.json();
   await transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, html });
   return Response.json({ sent: true });
-}`}</Code>
+}`}</CodeBlock>
         </>
       ),
     },
@@ -162,7 +150,7 @@ export async function POST(req: Request) {
       body: (
         <>
           <p>No dependencies needed — the standard library speaks SMTP.</p>
-          <Code label="send_email.py">{`import os, smtplib
+          <CodeBlock label="send_email.py" lang="python">{`import os, smtplib
 from email.message import EmailMessage
 
 msg = EmailMessage()
@@ -174,7 +162,7 @@ msg.set_content("Thanks for signing up.")
 with smtplib.SMTP(os.environ["SMTP_HOST"], 587) as smtp:
     smtp.starttls()
     smtp.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
-    smtp.send_message(msg)`}</Code>
+    smtp.send_message(msg)`}</CodeBlock>
         </>
       ),
     },
@@ -187,7 +175,7 @@ with smtplib.SMTP(os.environ["SMTP_HOST"], 587) as smtp:
             Configure the SMTP backend and every <code>send_mail()</code> call, plus the built-in
             password-reset flow, goes through us.
           </p>
-          <Code label="settings.py">{`import os
+          <CodeBlock label="settings.py" lang="python">{`import os
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "${host}"
@@ -195,7 +183,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ["SMTP_USER"]
 EMAIL_HOST_PASSWORD = os.environ["SMTP_PASS"]
-DEFAULT_FROM_EMAIL = "Your App <hello@yourdomain.com>"`}</Code>
+DEFAULT_FROM_EMAIL = "Your App <hello@yourdomain.com>"`}</CodeBlock>
         </>
       ),
     },
@@ -205,14 +193,14 @@ DEFAULT_FROM_EMAIL = "Your App <hello@yourdomain.com>"`}</Code>
       body: (
         <>
           <p>Laravel needs no code change — only environment variables.</p>
-          <Code label=".env">{`MAIL_MAILER=smtp
+          <CodeBlock label=".env" lang="ini">{`MAIL_MAILER=smtp
 MAIL_HOST=${host}
 MAIL_PORT=587
 MAIL_USERNAME=your-username
 MAIL_PASSWORD=your-password
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=hello@yourdomain.com
-MAIL_FROM_NAME="Your App"`}</Code>
+MAIL_FROM_NAME="Your App"`}</CodeBlock>
           <p>
             On plain PHP, use PHPMailer with <code>SMTPAuth = true</code>,{' '}
             <code>SMTPSecure = &apos;tls&apos;</code> and <code>Port = 587</code>.
@@ -224,7 +212,7 @@ MAIL_FROM_NAME="Your App"`}</Code>
       id: 'rails',
       title: 'Ruby on Rails',
       body: (
-        <Code label="config/environments/production.rb">{`config.action_mailer.delivery_method = :smtp
+        <CodeBlock label="config/environments/production.rb" lang="ruby">{`config.action_mailer.delivery_method = :smtp
 config.action_mailer.smtp_settings = {
   address:              "${host}",
   port:                 587,
@@ -232,14 +220,14 @@ config.action_mailer.smtp_settings = {
   password:             ENV["SMTP_PASS"],
   authentication:       :plain,
   enable_starttls_auto: true
-}`}</Code>
+}`}</CodeBlock>
       ),
     },
     {
       id: 'go',
       title: 'Go',
       body: (
-        <Code label="main.go">{`package main
+        <CodeBlock label="main.go" lang="go">{`package main
 
 import (
 	"net/smtp"
@@ -259,19 +247,19 @@ func main() {
 		[]string{"customer@example.com"}, msg); err != nil {
 		panic(err)
 	}
-}`}</Code>
+}`}</CodeBlock>
       ),
     },
     {
       id: 'java-spring',
       title: 'Java and Spring Boot',
       body: (
-        <Code label="application.properties">{`spring.mail.host=${host}
+        <CodeBlock label="application.properties" lang="properties">{`spring.mail.host=${host}
 spring.mail.port=587
 spring.mail.username=\${SMTP_USER}
 spring.mail.password=\${SMTP_PASS}
 spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true`}</Code>
+spring.mail.properties.mail.smtp.starttls.enable=true`}</CodeBlock>
       ),
     },
     {
@@ -283,7 +271,7 @@ spring.mail.properties.mail.smtp.starttls.enable=true`}</Code>
             MailKit is the recommended client; <code>SmtpClient</code> in{' '}
             <code>System.Net.Mail</code> is obsolete.
           </p>
-          <Code label="Program.cs">{`using MailKit.Net.Smtp;
+          <CodeBlock label="Program.cs" lang="csharp">{`using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 
@@ -299,7 +287,7 @@ await client.AuthenticateAsync(
     Environment.GetEnvironmentVariable("SMTP_USER"),
     Environment.GetEnvironmentVariable("SMTP_PASS"));
 await client.SendAsync(message);
-await client.DisconnectAsync(true);`}</Code>
+await client.DisconnectAsync(true);`}</CodeBlock>
         </>
       ),
     },
@@ -313,12 +301,12 @@ await client.DisconnectAsync(true);`}</Code>
             <strong>Project Settings → Authentication → SMTP Settings</strong>, enable a custom
             SMTP provider and enter:
           </p>
-          <Code label="Supabase SMTP settings">{`Host:            ${host}
+          <CodeBlock label="Supabase SMTP settings" lang="plaintext">{`Host:            ${host}
 Port:            587
 Username:        your-username
 Password:        your-password
 Sender email:    hello@yourdomain.com
-Sender name:     Your App`}</Code>
+Sender name:     Your App`}</CodeBlock>
           <p>
             The sender email must be on a domain you have verified here, or Supabase&apos;s
             confirmation and magic-link emails will be rejected.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlans, usePublicConfig } from '../api/hooks.js';
 import { CopyButton, Icon, money, type IconName } from '../components/bits.js';
+import { highlight, type CodeLang } from '../components/CodeBlock.js';
 import { PricingSection } from './Pricing.js';
 
 const STACKS = [
@@ -65,10 +66,11 @@ const STEPS = [
 
 type Tab = 'prompt' | 'env' | 'node' | 'python';
 
-function snippets(host: string): Record<Tab, { label: string; file: string; code: string }> {
+function snippets(host: string): Record<Tab, { label: string; file: string; lang: CodeLang; code: string }> {
   return {
     prompt: {
       label: 'AI prompt',
+      lang: 'plaintext',
       file: 'paste into Cursor / Claude / Lovable',
       code: `Add transactional email to this app using SMTP.
 
@@ -86,6 +88,7 @@ Log and surface errors instead of failing silently.`,
     },
     env: {
       label: '.env',
+      lang: 'ini',
       file: '.env',
       code: `SMTP_HOST=${host}
 SMTP_PORT=587
@@ -95,6 +98,7 @@ MAIL_FROM=hello@yourdomain.com`,
     },
     node: {
       label: 'Node.js',
+      lang: 'javascript',
       file: 'email.js',
       code: `import nodemailer from 'nodemailer';
 
@@ -113,6 +117,7 @@ await transport.sendMail({
     },
     python: {
       label: 'Python',
+      lang: 'python',
       file: 'email.py',
       code: `import os, smtplib
 from email.message import EmailMessage
@@ -158,7 +163,12 @@ function CodeShowcase({ host }: { host: string }) {
         <CopyButton value={current.code} label={`Copy ${current.label}`} />
       </div>
       <div className="file">{current.file}</div>
-      <pre>{current.code}</pre>
+      <pre>
+        <code
+          className={`hljs language-${current.lang}`}
+          dangerouslySetInnerHTML={{ __html: highlight(current.code, current.lang) }}
+        />
+      </pre>
     </div>
   );
 }
