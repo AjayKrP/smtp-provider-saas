@@ -85,8 +85,9 @@ const sections: DocSection[] = [
           </li>
         </ul>
         <p>
-          We do not sell your data, use it for advertising, or read the content of your emails
-          except where needed to investigate abuse or a problem you report.
+          We do not sell your data, and we do not read the content of your emails except where
+          needed to investigate abuse or a problem you report. We do measure advertising: see
+          cookies and browser storage below.
         </p>
       </>
     ),
@@ -95,12 +96,24 @@ const sections: DocSection[] = [
     id: 'cookies',
     title: 'Cookies and browser storage',
     body: (
-      <p>
-        We use one essential, secure cookie to keep you signed in, and your browser’s local storage
-        to hold a short-lived sign-in token. We do not use analytics, advertising or tracking
-        cookies. The website loads the Inter font from Google Fonts, so Google receives your IP
-        address when a page loads.
-      </p>
+      <>
+        <p>
+          We use one essential, secure cookie to keep you signed in, and your browser’s local
+          storage to hold a short-lived sign-in token. Neither is used to track you.
+        </p>
+        <p>
+          The site also loads the Google Ads tag (gtag.js), which sets Google cookies and tells us
+          when an advert led to a sign-up. It loads on every page, including while you are signed
+          in, but it is never given your email content, recipients, delivery logs or SMTP
+          credentials. To opt out, use your browser&apos;s cookie controls, a content blocker, or
+          Google&apos;s{' '}
+          <a href="https://adssettings.google.com" rel="noreferrer noopener" target="_blank">
+            Ads Settings
+          </a>
+          . The site also loads the Inter font from Google Fonts, so Google receives your IP address
+          when a page loads.
+        </p>
+      </>
     ),
   },
   {
@@ -120,7 +133,8 @@ const sections: DocSection[] = [
             <strong>MongoDB Atlas</strong> — database hosting.
           </li>
           <li>
-            <strong>Google Fonts</strong> — web fonts, as described above.
+            <strong>Google</strong> — web fonts, and advertising measurement through the Google Ads
+            tag on our public pages.
           </li>
           <li>
             <strong>Recipient mail servers</strong> — the emails you send are, by their nature,
@@ -241,8 +255,9 @@ export function Privacy() {
       intro={
         <p>
           Plain version: we collect what we need to send your email and bill you, delete email
-          content after 7 days and delivery logs after 30, never sell your data, don’t track you,
-          and let payments go through Razorpay so we never see your card or UPI details.
+          content after 7 days and delivery logs after 30, never sell your data, and let payments go
+          through Razorpay so we never see your card or UPI details. The site carries a Google Ads
+          tag so we can tell which adverts work.
         </p>
       }
       sections={sections}

@@ -27,4 +27,11 @@ export default tseslint.config(
       globals: { console: 'readonly', process: 'readonly' },
     },
   },
+  {
+    // Static scripts served as-is to the browser, outside the TypeScript projects.
+    files: ['apps/dashboard/public/*.js'],
+    languageOptions: {
+      globals: { window: 'readonly' },
+    },
+  },
 );
