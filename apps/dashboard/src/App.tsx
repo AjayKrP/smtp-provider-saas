@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext.js';
 import { useSeo } from './seo/useSeo.js';
+import { CookieConsent } from './components/CookieConsent.js';
 import { Layout } from './components/Layout.js';
 import { PublicLayout } from './components/PublicLayout.js';
 import { Landing } from './pages/Landing.js';
@@ -25,43 +26,49 @@ export function App() {
 
   if (!authenticated) {
     return (
-      <Routes>
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <>
+        <CookieConsent />
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </>
     );
   }
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/domains" element={<Domains />} />
-        <Route path="/credentials" element={<Credentials />} />
-        <Route path="/activity" element={<Activity />} />
-        <Route path="/billing" element={<Billing />} />
-      </Route>
-      <Route path="/pricing" element={<Navigate to="/billing" replace />} />
-      {/* Emailed links can be opened while already signed in. */}
-      <Route element={<PublicLayout />}>
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <CookieConsent />
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/domains" element={<Domains />} />
+          <Route path="/credentials" element={<Credentials />} />
+          <Route path="/activity" element={<Activity />} />
+          <Route path="/billing" element={<Billing />} />
+        </Route>
+        <Route path="/pricing" element={<Navigate to="/billing" replace />} />
+        {/* Emailed links can be opened while already signed in. */}
+        <Route element={<PublicLayout />}>
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }

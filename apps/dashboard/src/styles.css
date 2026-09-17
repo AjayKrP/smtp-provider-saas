@@ -1432,6 +1432,69 @@ code.hljs {
   }
 }
 
+/* Cookie consent — a bar along the bottom, above everything, on every page. */
+.consent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--panel);
+  border-top: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+}
+.consent-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.consent p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 660px;
+  min-width: 260px;
+  flex: 1;
+}
+.consent-actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+/* Equal weight: refusing must be as easy as agreeing. */
+.consent-actions button {
+  min-width: 96px;
+}
+.btn.linklike {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.btn.linklike:hover {
+  background: none;
+  color: var(--text);
+  text-decoration: underline;
+}
+@media (max-width: 560px) {
+  .consent-inner {
+    gap: 12px;
+  }
+  .consent-actions {
+    width: 100%;
+  }
+  .consent-actions button {
+    flex: 1;
+  }
+}
+
 .site-foot {
   border-top: 1px solid var(--border);
 }

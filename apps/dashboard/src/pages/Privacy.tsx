@@ -102,16 +102,18 @@ const sections: DocSection[] = [
           storage to hold a short-lived sign-in token. Neither is used to track you.
         </p>
         <p>
-          The site also loads the Google Ads tag (gtag.js), which sets Google cookies and tells us
-          when an advert led to a sign-up. It loads on every page, including while you are signed
-          in, but it is never given your email content, recipients, delivery logs or SMTP
-          credentials. To opt out, use your browser&apos;s cookie controls, a content blocker, or
-          Google&apos;s{' '}
+          We also use the Google Ads tag (gtag.js), which sets a Google cookie and tells us when an
+          advert led to a sign-up. <strong>It loads only if you accept it</strong>: nothing is
+          requested from Google, and no advertising cookie is set, until you choose Accept on the
+          cookie banner. Decline and it never loads — we also clear any Google cookie an earlier
+          visit had set. It is never given your email content, recipients, delivery logs or SMTP
+          credentials. You can change your mind at any time with the <strong>Cookies</strong> link
+          in the site footer, or opt out through Google&apos;s{' '}
           <a href="https://adssettings.google.com" rel="noreferrer noopener" target="_blank">
             Ads Settings
           </a>
-          . The site also loads the Inter font from Google Fonts, so Google receives your IP address
-          when a page loads.
+          . Separately, the site loads the Inter font from Google Fonts, so Google receives your IP
+          address when a page loads.
         </p>
       </>
     ),
@@ -260,8 +262,8 @@ export function Privacy() {
         <p>
           Plain version: we collect what we need to send your email and bill you, delete email
           content after 7 days and delivery logs after 30, never sell your data, and let payments go
-          through Razorpay so we never see your card or UPI details. The site carries a Google Ads
-          tag so we can tell which adverts work.
+          through Razorpay so we never see your card or UPI details. Advertising cookies load only
+          if you accept them.
         </p>
       }
       sections={sections}

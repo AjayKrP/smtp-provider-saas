@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
 import { BRAND, Icon, Logo } from './bits.js';
+import { OPEN_CONSENT } from '../consent.js';
 
 const LINKS = [
   ['/docs', 'Docs'],
@@ -97,6 +98,13 @@ export function PublicLayout() {
                 Sign in
               </Link>
             )}
+            <button
+              type="button"
+              className="btn ghost sm linklike"
+              onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT))}
+            >
+              Cookies
+            </button>
           </span>
         </div>
       </footer>
