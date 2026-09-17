@@ -130,6 +130,10 @@ const sections: DocSection[] = [
             <strong>Hetzner</strong> — the servers that run the Service, located in Finland.
           </li>
           <li>
+            <strong>Cloudflare</strong> — DNS, and the network our website is served through, so it
+            processes visitors&apos; IP addresses and provides cookieless page analytics.
+          </li>
+          <li>
             <strong>MongoDB Atlas</strong> — database hosting.
           </li>
           <li>
