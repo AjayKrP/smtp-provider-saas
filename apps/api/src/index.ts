@@ -17,7 +17,7 @@ async function main(): Promise<void> {
 
   const app = createApp();
   const server = app.listen(env.API_PORT, () => {
-    logger.info({ port: env.API_PORT }, 'api listening');
+    logger.info({ port: env.API_PORT, adminEmails: env.ADMIN_EMAILS.length }, 'api listening');
   });
 
   const shutdown = (signal: string) => {
