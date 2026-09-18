@@ -1,0 +1,15 @@
+---
+subject: New signup: {{name}} ({{email}})
+preheader: {{email}} just registered · {{totalUsers}} users in total
+---
+{{#> heading}}New user registered{{/heading}}
+{{#> paragraph}}<strong>{{name}}</strong> just created an account. That makes <strong>{{totalUsers}}</strong> registered users.{{/paragraph}}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 6px; border-top:1px solid #f0f0f2;">
+  {{> detail-row label="Name" value=name strong=false}}
+  {{> detail-row label="Email" value=email strong=false}}
+  {{> detail-row label="Workspace" value=organizationName strong=false}}
+  {{> detail-row label="Signed up" value=signedUpAt strong=false}}
+  {{> detail-row label="Total users" value=totalUsers strong=true}}
+</table>
+{{> button url=adminUrl label="Open admin"}}
+{{#> note}}You get this because your address is in ADMIN_EMAILS. The user still has to confirm their email before they can sign in.{{/note}}

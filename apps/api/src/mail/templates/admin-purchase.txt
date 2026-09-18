@@ -1,0 +1,19 @@
+New purchase
+
+{{name}} paid {{amount}} for the {{planName}} plan, active until {{periodEnd}}.
+
+  Customer:      {{name}}
+  Email:         {{email}}
+  Workspace:     {{organizationName}}
+  Plan:          {{planName}}
+  Paid on:       {{paidOn}}
+  Active until:  {{periodEnd}}
+  Payment ID:    {{paymentId}}
+  Order ID:      {{orderId}}
+  Amount:        {{amount}}
+
+Open admin: {{adminUrl}}
+
+You get this because your address is in ADMIN_EMAILS.
+
+— {{brand}}

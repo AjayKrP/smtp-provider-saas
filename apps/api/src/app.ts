@@ -16,6 +16,7 @@ import { domainsRouter } from './domains/routes.js';
 import { credentialsRouter } from './credentials/routes.js';
 import { messagesRouter } from './messages/routes.js';
 import { usageRouter } from './usage/routes.js';
+import { adminRouter } from './admin/routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -48,6 +49,7 @@ export function createApp(): Express {
   app.use('/smtp-credentials', credentialsRouter);
   app.use('/messages', messagesRouter);
   app.use('/usage', usageRouter);
+  app.use('/admin', adminRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'not_found', message: 'Route not found' });

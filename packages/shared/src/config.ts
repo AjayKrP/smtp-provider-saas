@@ -42,6 +42,17 @@ const apiSchema = sharedSchema.extend({
   SYSTEM_SMTP_PORT: z.coerce.number().int().positive().default(465),
   SYSTEM_SMTP_USER: z.string().optional(),
   SYSTEM_SMTP_PASS: z.string().optional(),
+  // Comma-separated operator addresses. Each one is emailed about every new signup and
+  // every purchase, and an account with one of these (verified) emails can open /admin.
+  ADMIN_EMAILS: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean),
+    ),
 });
 
 const smtpSchema = sharedSchema.extend({

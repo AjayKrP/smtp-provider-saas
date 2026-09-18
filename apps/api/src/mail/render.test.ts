@@ -43,6 +43,26 @@ const samples = {
     orderId: 'order_XYZ789',
     billingUrl: 'https://app.test/billing',
   },
+  'admin-new-signup': {
+    name: 'Ada',
+    email: 'ada@example.com',
+    organizationName: "Ada's workspace",
+    signedUpAt: '18 Sept 2026',
+    totalUsers: '42',
+    adminUrl: 'https://app.test/admin',
+  },
+  'admin-purchase': {
+    name: 'Ada',
+    email: 'ada@example.com',
+    organizationName: "Ada's workspace",
+    planName: 'Ship',
+    amount: '₹599.00',
+    paidOn: '18 Sept 2026',
+    periodEnd: '18 Oct 2026',
+    paymentId: 'pay_ABC123',
+    orderId: 'order_XYZ789',
+    adminUrl: 'https://app.test/admin',
+  },
 } as const;
 
 describe('email templates', () => {

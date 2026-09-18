@@ -11,6 +11,7 @@ const links: [string, string, IconName][] = [
   ['/billing', 'Billing', 'card'],
   ['/docs', 'Docs', 'code'],
 ];
+const adminLink: [string, string, IconName] = ['/admin', 'Admin', 'shield'];
 
 export function Layout() {
   const { logout } = useAuth();
@@ -24,7 +25,7 @@ export function Layout() {
           <Logo />
         </div>
         <nav>
-          {links.map(([to, label, icon]) => (
+          {(me?.isAdmin ? [...links, adminLink] : links).map(([to, label, icon]) => (
             <NavLink key={to} to={to} end={to === '/'} title={label}>
               <Icon name={icon} />
               <span>{label}</span>

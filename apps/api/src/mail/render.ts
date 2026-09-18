@@ -40,6 +40,27 @@ export interface EmailTemplates {
     orderId: string;
     billingUrl: string;
   };
+  // Sent to ADMIN_EMAILS, not to customers.
+  'admin-new-signup': {
+    name: string;
+    email: string;
+    organizationName: string;
+    signedUpAt: string;
+    totalUsers: string;
+    adminUrl: string;
+  };
+  'admin-purchase': {
+    name: string;
+    email: string;
+    organizationName: string;
+    planName: string;
+    amount: string;
+    paidOn: string;
+    periodEnd: string;
+    paymentId: string;
+    orderId: string;
+    adminUrl: string;
+  };
 }
 
 export type EmailTemplateName = keyof EmailTemplates;

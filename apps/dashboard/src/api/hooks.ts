@@ -6,6 +6,8 @@ export interface Me {
   id: string;
   email: string;
   name: string;
+  /** Listed in the API's ADMIN_EMAILS; can open /admin. */
+  isAdmin: boolean;
   organization: { id: string; name: string; planKey: string } | null;
 }
 
@@ -213,3 +215,30 @@ export function usePurchase() {
       ),
   });
 }
+
+export interface AdminStats {
+  users: { total: number; verified: number; last7Days: number; last30Days: number };
+  activePaidSubscriptions: number;
+  revenue: { currency: string; amount: number; payments: number }[];
+  recentUsers: {
+    id: string;
+    email: string;
+    name: string;
+    verified: boolean;
+    organizationName: string | null;
+    planKey: string | null;
+    createdAt: string;
+  }[];
+  recentPayments: {
+    id: string;
+    email: string | null;
+    organizationName: string | null;
+    planKey: string;
+    amount: number;
+    currency: string;
+    paidAt: string | null;
+  }[];
+}
+
+export const useAdminStats = () =>
+  useQuery({ queryKey: ['admin', 'stats'], queryFn: () => get<AdminStats>('/admin/stats') });

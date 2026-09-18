@@ -1,0 +1,19 @@
+---
+subject: New purchase: {{planName}} for {{amount}} by {{email}}
+preheader: {{name}} paid {{amount}} for {{planName}}
+---
+{{#> heading}}New purchase{{/heading}}
+{{#> paragraph}}<strong>{{name}}</strong> paid <strong>{{amount}}</strong> for the <strong>{{planName}}</strong> plan, active until {{periodEnd}}.{{/paragraph}}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 6px; border-top:1px solid #f0f0f2;">
+  {{> detail-row label="Customer" value=name strong=false}}
+  {{> detail-row label="Email" value=email strong=false}}
+  {{> detail-row label="Workspace" value=organizationName strong=false}}
+  {{> detail-row label="Plan" value=planName strong=false}}
+  {{> detail-row label="Paid on" value=paidOn strong=false}}
+  {{> detail-row label="Active until" value=periodEnd strong=false}}
+  {{> detail-row label="Payment ID" value=paymentId strong=false}}
+  {{> detail-row label="Order ID" value=orderId strong=false}}
+  {{> detail-row label="Amount" value=amount strong=true}}
+</table>
+{{> button url=adminUrl label="Open admin"}}
+{{#> note}}You get this because your address is in ADMIN_EMAILS.{{/note}}

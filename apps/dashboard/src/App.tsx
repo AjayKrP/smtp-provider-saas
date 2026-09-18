@@ -19,6 +19,7 @@ import { Domains } from './pages/Domains.js';
 import { Credentials } from './pages/Credentials.js';
 import { Activity } from './pages/Activity.js';
 import { Billing } from './pages/Billing.js';
+import { Admin } from './pages/Admin.js';
 
 export function App() {
   const { authenticated } = useAuth();
@@ -57,6 +58,7 @@ export function App() {
           <Route path="/credentials" element={<Credentials />} />
           <Route path="/activity" element={<Activity />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
         <Route path="/pricing" element={<Navigate to="/billing" replace />} />
         {/* Emailed links can be opened while already signed in. */}

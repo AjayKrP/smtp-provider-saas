@@ -8,7 +8,8 @@ import {
 } from '@smtp-saas/shared';
 import { env } from '../env.js';
 import { formatDate, formatMoney } from '../mail/format.js';
-import { sendTemplate } from '../mail/send.js';
+import { sendInBackground, sendTemplate } from '../mail/send.js';
+import { notifyAdminsOfPurchase } from '../admin/notify.js';
 
 /** Email the organization owner a confirmation for a payment that was just credited. */
 export async function sendPaymentReceipt(payment: PaymentDoc): Promise<void> {
@@ -33,4 +34,10 @@ export async function sendPaymentReceipt(payment: PaymentDoc): Promise<void> {
     // A receipt failure must never undo or block the payment itself.
     logger.error({ err, paymentId: String(payment._id) }, 'failed to send payment receipt');
   }
+}
+
+/** Everything that follows a newly credited payment: the admins' notice and the receipt. */
+export async function onPaymentCredited(payment: PaymentDoc): Promise<void> {
+  sendInBackground(notifyAdminsOfPurchase(payment));
+  await sendPaymentReceipt(payment);
 }

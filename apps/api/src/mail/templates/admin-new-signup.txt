@@ -1,0 +1,15 @@
+New user registered
+
+{{name}} just created an account. That makes {{totalUsers}} registered users.
+
+  Name:         {{name}}
+  Email:        {{email}}
+  Workspace:    {{organizationName}}
+  Signed up:    {{signedUpAt}}
+  Total users:  {{totalUsers}}
+
+Open admin: {{adminUrl}}
+
+You get this because your address is in ADMIN_EMAILS. The user still has to confirm their email before they can sign in.
+
+— {{brand}}

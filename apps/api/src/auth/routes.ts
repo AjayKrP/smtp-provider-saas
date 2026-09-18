@@ -18,6 +18,7 @@ import { hashPassword, verifyPassword } from './password.js';
 import { consumeLinkToken, issueLinkToken, issuedRecently } from './linkTokens.js';
 import { REFRESH_COOKIE, signAccessToken, signRefreshToken, verifyRefreshToken } from './tokens.js';
 import { auth, requireAuth } from './middleware.js';
+import { isAdminEmail, notifyAdminsOfSignup } from '../admin/notify.js';
 
 export const authRouter: Router = Router();
 
@@ -169,7 +170,10 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   }
 
   const user = await UserModel.findById(userId);
-  if (user) sendInBackground(sendLink(user, 'verify_email'));
+  if (user) {
+    sendInBackground(sendLink(user, 'verify_email'));
+    sendInBackground(notifyAdminsOfSignup(user));
+  }
   // No session until the address is confirmed.
   res.status(201).json(pending);
 });
@@ -282,6 +286,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     id: user._id,
     email: user.email,
     name: user.name,
+    isAdmin: !!user.emailVerifiedAt && isAdminEmail(user.email),
     organization: org && {
       id: org._id,
       name: org.name,

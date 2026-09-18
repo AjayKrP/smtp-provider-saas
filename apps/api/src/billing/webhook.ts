@@ -1,7 +1,7 @@
 import { Router, raw } from 'express';
 import { logger } from '@smtp-saas/shared';
 import { fulfillOrder } from './fulfill.js';
-import { sendPaymentReceipt } from './receipt.js';
+import { onPaymentCredited } from './receipt.js';
 import { verifyWebhookSignature } from './razorpay.js';
 
 interface RazorpayWebhook {
@@ -40,7 +40,7 @@ razorpayWebhookRouter.post('/', raw({ type: 'application/json' }), async (req, r
       const payment = event.payload.payment?.entity;
       const orderId = event.payload.order?.entity.id ?? payment?.order_id;
       if (orderId && payment) {
-        await fulfillOrder(orderId, payment.id, { onPaid: sendPaymentReceipt });
+        await fulfillOrder(orderId, payment.id, { onPaid: onPaymentCredited });
       }
     }
   } catch (err) {
