@@ -1,4 +1,5 @@
 import { FAQ } from '../content/faq.js';
+import { GUIDES } from '../content/guides.js';
 
 /**
  * Per-route metadata, shared by two consumers so they can never disagree:
@@ -84,6 +85,32 @@ const howTo = {
   proficiencyLevel: 'Beginner',
 };
 
+/**
+ * One TechArticle per guide, built from the same entry that renders the page, so a guide
+ * can never be indexed under a heading it does not have. `isPartOf` groups them under the
+ * hub, which is what makes a set of pages read as a section rather than as strays.
+ */
+const guideArticle = (path: string, headline: string, description: string): unknown => ({
+  '@type': 'TechArticle',
+  '@id': `${SITE_URL}${path}#article`,
+  headline,
+  description,
+  url: `${SITE_URL}${path}`,
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  isPartOf: { '@id': `${SITE_URL}/guides#collection` },
+  proficiencyLevel: 'Beginner',
+});
+
+const guideCollection = {
+  '@type': 'CollectionPage',
+  '@id': `${SITE_URL}/guides#collection`,
+  name: 'Email guides',
+  url: `${SITE_URL}/guides`,
+  description:
+    'Setup guides for Supabase Auth, Lovable, Bolt and Next.js, a deliverability explainer, and honest provider comparisons.',
+  publisher: { '@id': `${SITE_URL}/#organization` },
+};
+
 const faqPage = {
   '@type': 'FAQPage',
   '@id': `${SITE_URL}/pricing#faq`,
@@ -122,6 +149,33 @@ export const SEO_ROUTES: SeoRoute[] = [
     changefreq: 'monthly',
     jsonLd: [howTo],
   },
+  {
+    path: '/prompt',
+    title: 'AI Prompt: Add Email to Your App — Email4VibeCoder',
+    description:
+      'Copy-paste prompts that tell Cursor, Claude Code, Lovable or Bolt exactly how to add transactional email over SMTP, including the constraints assistants usually get wrong.',
+    priority: '0.8',
+    changefreq: 'monthly',
+  },
+  {
+    path: '/guides',
+    title: 'Email Guides for Developers — Email4VibeCoder',
+    description:
+      'Setup guides for Supabase Auth, Lovable, Bolt and Next.js, why email lands in spam, and honest comparisons with SendGrid and Resend.',
+    priority: '0.8',
+    changefreq: 'weekly',
+    jsonLd: [guideCollection],
+  },
+  // One route per entry in the guide registry: adding a guide there is enough for the
+  // build to prerender it, link it from the hub and list it in the sitemap.
+  ...GUIDES.map((guide): SeoRoute => ({
+    path: guide.path,
+    title: guide.seoTitle,
+    description: guide.description,
+    priority: '0.7',
+    changefreq: 'monthly',
+    jsonLd: [guideArticle(guide.path, guide.label, guide.description)],
+  })),
   {
     path: '/terms',
     title: 'Terms of Service — Email4VibeCoder',

@@ -1,0 +1,24 @@
+# Local development config for the Supabase CLI.
+#
+# `supabase start` normally routes auth email to Inbucket, its built-in catcher — which is
+# what you want locally. Enable the block below only when you specifically want local mail
+# delivered for real, and keep the credentials in the environment rather than in this file.
+
+project_id = "supabase-auth-smtp-example"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+[auth.email.smtp]
+enabled = false
+host = "smtp.email4vibecoder.com"
+port = 587
+user = "env(SMTP_USER)"
+pass = "env(SMTP_PASS)"
+admin_email = "noreply@yourdomain.com"
+sender_name = "Your App"

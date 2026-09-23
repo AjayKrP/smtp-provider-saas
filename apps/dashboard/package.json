@@ -21,6 +21,7 @@
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^6.1.1",
+    "turndown": "^7.2.4",
     "typescript": "^5.7.2",
     "vite": "^8.2.2"
   }

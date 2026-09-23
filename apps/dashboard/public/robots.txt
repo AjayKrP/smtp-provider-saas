@@ -14,4 +14,6 @@ Disallow: /billing
 Disallow: /admin
 Disallow: /api/
 
+# A Markdown mirror of every public page, and the llms.txt index that lists them, are
+# written by the build for assistants and crawlers that would rather not parse HTML.
 Sitemap: https://email4vibecoder.com/sitemap.xml

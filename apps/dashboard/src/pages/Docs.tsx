@@ -141,6 +141,11 @@ export async function POST(req: Request) {
   await transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, html });
   return Response.json({ sent: true });
 }`}</CodeBlock>
+          <p>
+            Server actions, connection reuse on serverless hosts and the errors the Edge runtime
+            produces are covered in the{' '}
+            <Link to="/guides/send-email-from-nextjs">Next.js guide</Link>.
+          </p>
         </>
       ),
     },
@@ -310,6 +315,11 @@ Sender name:     Your App`}</CodeBlock>
           <p>
             The sender email must be on a domain you have verified here, or Supabase&apos;s
             confirmation and magic-link emails will be rejected.
+          </p>
+          <p>
+            Supabase has its own auth rate limit that stays in force after you add SMTP, and the
+            settings panel has moved between dashboard versions — both are covered in the{' '}
+            <Link to="/guides/supabase-smtp-settings">full Supabase Auth guide</Link>.
           </p>
         </>
       ),

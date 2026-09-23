@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SMTP test</title>
+    <style>
+      body { max-width: 26rem; margin: 10vh auto; font-family: system-ui, sans-serif; }
+      input, button { padding: 0.5rem; font: inherit; }
+      input { display: block; width: 100%; margin: 0.5rem 0; }
+    </style>
+  </head>
+  <body>
+    <h1>SMTP test</h1>
+    {% if messages %}
+      {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+    {% endif %}
+    <form method="post" action="{% url 'send' %}">
+      {% csrf_token %}
+      <label for="to">Send a test message to</label>
+      <input id="to" type="email" name="to" placeholder="you@example.com" required />
+      <button type="submit">Send</button>
+    </form>
+  </body>
+</html>

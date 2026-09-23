@@ -3,7 +3,10 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', 'apps/dashboard/dist/**'],
+    // examples/ holds standalone sample projects, each with its own toolchain and
+    // runtime (Next.js, Deno). They are published as their own repositories and are not
+    // part of this workspace's TypeScript build.
+    ignores: ['**/dist/**', '**/node_modules/**', 'apps/dashboard/dist/**', 'examples/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

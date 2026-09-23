@@ -6,6 +6,7 @@ import { OPEN_CONSENT } from '../consent.js';
 
 const LINKS = [
   ['/docs', 'Docs'],
+  ['/guides', 'Guides'],
   ['/pricing', 'Pricing'],
 ] as const;
 
@@ -79,6 +80,9 @@ export function PublicLayout() {
           <span className="row">
             <Link to="/docs" className="muted">
               Docs
+            </Link>
+            <Link to="/guides" className="muted">
+              Guides
             </Link>
             <Link to="/pricing" className="muted">
               Pricing

@@ -1,2 +1,5 @@
 # Handlebars email templates: Prettier does not understand {{…}} blocks and mangles them.
 apps/api/src/mail/templates/
+
+# Standalone sample projects: kept exactly as a reader would copy them.
+examples/

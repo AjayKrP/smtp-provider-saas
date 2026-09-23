@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlans, usePublicConfig } from '../api/hooks.js';
+import { promptFor } from '../content/prompt.js';
 import { CopyButton, Icon, money, type IconName } from '../components/bits.js';
 import { highlight, type CodeLang } from '../components/CodeBlock.js';
 import { PricingSection } from './Pricing.js';
@@ -72,19 +73,8 @@ function snippets(host: string): Record<Tab, { label: string; file: string; lang
       label: 'AI prompt',
       lang: 'plaintext',
       file: 'paste into Cursor / Claude / Lovable',
-      code: `Add transactional email to this app using SMTP.
-
-Read these from environment variables (never hard-code them):
-  SMTP_HOST=${host}
-  SMTP_PORT=587        # STARTTLS (or 465 for implicit TLS)
-  SMTP_USER=<username from the dashboard>
-  SMTP_PASS=<password from the dashboard>
-  MAIL_FROM=hello@<my verified domain>
-
-Create one sendEmail(to, subject, html) helper using this stack's
-standard SMTP library (Nodemailer for Node.js, smtplib for Python),
-then use it for sign-up confirmation and password-reset emails.
-Log and surface errors instead of failing silently.`,
+      // Shared with /prompt and the Markdown mirror, so the three can never drift.
+      code: promptFor('general', host),
     },
     env: {
       label: '.env',
@@ -169,6 +159,9 @@ function CodeShowcase({ host }: { host: string }) {
           dangerouslySetInnerHTML={{ __html: highlight(current.code, current.lang) }}
         />
       </pre>
+      <div className="showcase-foot">
+        <Link to="/prompt">Prompts for Lovable and Bolt →</Link>
+      </div>
     </div>
   );
 }
