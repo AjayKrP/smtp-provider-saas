@@ -9,7 +9,7 @@ import {
 } from '../consent.js';
 
 /**
- * Consent banner for the Google Ads tag.
+ * Consent banner for the Google Analytics and Google Ads tags.
  *
  * Accept and Reject are given equal weight: the GDPR requires refusing to be as easy as
  * agreeing, so this is deliberately not a single "OK" button with a buried opt-out.
@@ -38,8 +38,8 @@ export function CookieConsent() {
     <div className="consent" role="dialog" aria-modal="false" aria-label="Cookie choices">
       <div className="consent-inner">
         <p>
-          We use cookies that are needed to sign you in, and — only if you agree — a Google
-          advertising cookie that tells us which adverts bring people here. See our{' '}
+          We use cookies that are needed to sign you in, and — only if you agree — Google cookies
+          that show us how the site is used and which adverts bring people here. See our{' '}
           <Link to="/privacy#cookies">Privacy Policy</Link>.
         </p>
         <div className="row consent-actions">

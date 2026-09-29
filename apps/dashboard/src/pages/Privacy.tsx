@@ -86,8 +86,8 @@ const sections: DocSection[] = [
         </ul>
         <p>
           We do not sell your data, and we do not read the content of your emails except where
-          needed to investigate abuse or a problem you report. We do measure advertising: see
-          cookies and browser storage below.
+          needed to investigate abuse or a problem you report. We do measure how the website is
+          used, and how adverts perform: see cookies and browser storage below.
         </p>
       </>
     ),
@@ -102,11 +102,14 @@ const sections: DocSection[] = [
           storage to hold a short-lived sign-in token. Neither is used to track you.
         </p>
         <p>
-          We also use the Google Ads tag (gtag.js), which sets a Google cookie and tells us when an
-          advert led to a sign-up. <strong>It loads only if you accept it</strong>: nothing is
-          requested from Google, and no advertising cookie is set, until you choose Accept on the
-          cookie banner. Decline and it never loads — we also clear any Google cookie an earlier
-          visit had set. It is never given your email content, recipients, delivery logs or SMTP
+          We also use two Google tags, loaded together through gtag.js:{' '}
+          <strong>Google Analytics 4</strong>, which sets <code>_ga</code> cookies and tells us
+          which pages people read and where they arrived from, and the{' '}
+          <strong>Google Ads tag</strong>, which sets a <code>_gcl</code> cookie and tells us when
+          an advert led to a sign-up. <strong>They load only if you accept them</strong>: nothing is
+          requested from Google, and no such cookie is set, until you choose Accept on the cookie
+          banner. Decline and they never load — we also clear any Google cookie an earlier visit had
+          set. Neither is ever given your email content, recipients, delivery logs or SMTP
           credentials. You can change your mind at any time with the <strong>Cookies</strong> link
           in the site footer, or opt out through Google&apos;s{' '}
           <a href="https://adssettings.google.com" rel="noreferrer noopener" target="_blank">
@@ -139,8 +142,8 @@ const sections: DocSection[] = [
             <strong>MongoDB Atlas</strong> — database hosting.
           </li>
           <li>
-            <strong>Google</strong> — web fonts, and advertising measurement through the Google Ads
-            tag on our public pages.
+            <strong>Google</strong> — web fonts, plus website analytics and advertising
+            measurement through the Google Analytics and Google Ads tags on our public pages.
           </li>
           <li>
             <strong>Recipient mail servers</strong> — the emails you send are, by their nature,

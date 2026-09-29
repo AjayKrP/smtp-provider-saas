@@ -1,14 +1,18 @@
 /**
- * Cookie consent for the Google Ads tag.
+ * Cookie consent for the Google tags: Analytics (GA4) and Ads.
  *
- * The tag is not in index.html: under the GDPR a non-essential cookie may only be set
- * after the visitor agrees, so nothing from Google is loaded until consent is granted.
- * The session cookie and the sign-in token are strictly necessary and need no consent.
+ * Neither is in index.html: under the GDPR a non-essential cookie may only be set after
+ * the visitor agrees, so nothing from Google is loaded until consent is granted. The
+ * session cookie and the sign-in token are strictly necessary and need no consent.
+ *
+ * Both tags ride one gtag.js load — a second copy of the script would double every
+ * event — so they are configured together and gated together.
  */
 export type Consent = 'granted' | 'denied';
 
 const KEY = 'e4vc_cookie_consent';
 const ADS_ID = 'AW-11445809191';
+const GA_ID = 'G-Q294LDNQT9';
 export const CONSENT_CHANGED = 'e4vc:consent-changed';
 export const OPEN_CONSENT = 'e4vc:open-consent';
 
@@ -42,7 +46,12 @@ declare global {
 
 let loaded = false;
 
-/** Inject gtag.js and configure it. Idempotent: safe to call on every page view. */
+/**
+ * Inject gtag.js and configure both tags. Idempotent: safe to call on every page view.
+ *
+ * GA4's enhanced measurement follows History API navigation on its own, so the SPA's
+ * client-side route changes are counted without a manual page_view per route.
+ */
 export function loadGoogleTag(): void {
   if (loaded || typeof document === 'undefined') return;
   loaded = true;
@@ -52,17 +61,18 @@ export function loadGoogleTag(): void {
     window.dataLayer!.push(args);
   };
   window.gtag('js', new Date());
+  window.gtag('config', GA_ID);
   window.gtag('config', ADS_ID);
 
   const script = document.createElement('script');
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${ADS_ID}`;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
   document.head.appendChild(script);
 }
 
 /**
- * Google's conversion-linker cookie is first-party, so declining is only honest if we
- * also remove what an earlier visit may have set.
+ * Google's conversion-linker and Analytics cookies (_gcl*, _ga*) are first-party, so
+ * declining is only honest if we also remove what an earlier visit may have set.
  */
 function clearAdCookies(): void {
   if (typeof document === 'undefined') return;
