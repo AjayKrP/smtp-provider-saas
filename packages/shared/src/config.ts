@@ -13,7 +13,10 @@ const sharedSchema = z.object({
   // base64-encoded 32-byte key
   ENCRYPTION_KEY: z
     .string()
-    .refine((v) => Buffer.from(v, 'base64').length === 32, 'ENCRYPTION_KEY must decode to 32 bytes'),
+    .refine(
+      (v) => Buffer.from(v, 'base64').length === 32,
+      'ENCRYPTION_KEY must decode to 32 bytes',
+    ),
 });
 
 const apiSchema = sharedSchema.extend({
@@ -42,6 +45,26 @@ const apiSchema = sharedSchema.extend({
   SYSTEM_SMTP_PORT: z.coerce.number().int().positive().default(465),
   SYSTEM_SMTP_USER: z.string().optional(),
   SYSTEM_SMTP_PASS: z.string().optional(),
+  // Referral program. The percentage a referrer earns of every payment made by an
+  // organization they referred, for as long as that organization keeps paying.
+  REFERRAL_COMMISSION_PERCENT: z.coerce.number().min(0).max(100).default(10),
+  // Days a commission is held before it can be withdrawn, so a refunded payment can be
+  // reversed while the money is still here.
+  REFERRAL_HOLD_DAYS: z.coerce.number().int().min(0).default(14),
+  // Smallest payout, in paise. Below this the transfer fee is a large share of the amount.
+  REFERRAL_MIN_PAYOUT: z.coerce.number().int().positive().default(50_000),
+  // Tax withheld at source from each payout, as a percentage. THE DEFAULT OF 0 WITHHOLDS
+  // NOTHING: commission paid to a referrer is taxable and the correct rate depends on
+  // their status and on current law, so set this on an accountant's advice before the
+  // first payout. It is stored per payout, so changing it never rewrites history.
+  REFERRAL_TDS_PERCENT: z.coerce.number().min(0).max(100).default(0),
+  // RazorpayX, for making the transfers. Optional: without it payouts still queue and an
+  // operator settles them by hand from /admin, which is a reasonable place to start.
+  RAZORPAYX_ACCOUNT_NUMBER: z.string().optional(),
+  // Defaults to the main Razorpay key pair, which works when RazorpayX is enabled on the
+  // same account; set these only if RazorpayX has its own credentials.
+  RAZORPAYX_KEY_ID: z.string().optional(),
+  RAZORPAYX_KEY_SECRET: z.string().optional(),
   // Comma-separated operator addresses. Each one is emailed about every new signup and
   // every purchase, and an account with one of these (verified) emails can open /admin.
   ADMIN_EMAILS: z

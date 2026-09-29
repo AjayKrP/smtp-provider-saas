@@ -1,6 +1,7 @@
 import { Router, raw } from 'express';
 import { logger } from '@smtp-saas/shared';
 import { fulfillOrder } from './fulfill.js';
+import { reverseCommissionsForPayment } from '../referrals/commissions.js';
 import { onPaymentCredited } from './receipt.js';
 import { verifyWebhookSignature } from './razorpay.js';
 
@@ -9,6 +10,7 @@ interface RazorpayWebhook {
   payload: {
     order?: { entity: { id: string } };
     payment?: { entity: { id: string; order_id: string | null } };
+    refund?: { entity: { id: string; payment_id: string } };
   };
 }
 
@@ -41,6 +43,15 @@ razorpayWebhookRouter.post('/', raw({ type: 'application/json' }), async (req, r
       const orderId = event.payload.order?.entity.id ?? payment?.order_id;
       if (orderId && payment) {
         await fulfillOrder(orderId, payment.id, { onPaid: onPaymentCredited });
+      }
+    } else if (event.event === 'refund.created' || event.event === 'payment.refunded') {
+      // A refunded payment must not keep earning its referrer a commission. Only earnings
+      // still inside the hold window can be taken back; anything already paid out is
+      // logged for recovery by hand.
+      const refundedPaymentId =
+        event.payload.refund?.entity.payment_id ?? event.payload.payment?.entity.id;
+      if (refundedPaymentId) {
+        await reverseCommissionsForPayment(refundedPaymentId, `razorpay ${event.event}`);
       }
     }
   } catch (err) {

@@ -26,6 +26,8 @@ import { Credentials } from './pages/Credentials.js';
 import { Activity } from './pages/Activity.js';
 import { Billing } from './pages/Billing.js';
 import { Admin } from './pages/Admin.js';
+import { Referrals } from './pages/Referrals.js';
+import { ReferralLanding } from './pages/ReferralLanding.js';
 
 /**
  * The marketing guides, shared by both trees: signed-in users follow these links from the
@@ -69,6 +71,7 @@ export function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
           </Route>
+          <Route path="/r/:code" element={<ReferralLanding />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </>
@@ -86,7 +89,9 @@ export function App() {
           <Route path="/activity" element={<Activity />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/referrals" element={<Referrals />} />
         </Route>
+        <Route path="/r/:code" element={<ReferralLanding />} />
         <Route path="/pricing" element={<Navigate to="/billing" replace />} />
         {/* Emailed links can be opened while already signed in. */}
         <Route element={<PublicLayout />}>

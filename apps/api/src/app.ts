@@ -16,6 +16,7 @@ import { domainsRouter } from './domains/routes.js';
 import { credentialsRouter } from './credentials/routes.js';
 import { messagesRouter } from './messages/routes.js';
 import { usageRouter } from './usage/routes.js';
+import { referralsRouter } from './referrals/routes.js';
 import { adminRouter } from './admin/routes.js';
 
 export function createApp(): Express {
@@ -49,6 +50,7 @@ export function createApp(): Express {
   app.use('/smtp-credentials', credentialsRouter);
   app.use('/messages', messagesRouter);
   app.use('/usage', usageRouter);
+  app.use('/referrals', referralsRouter);
   app.use('/admin', adminRouter);
 
   app.use((_req, res) => {

@@ -6,6 +6,7 @@ import {
   nextBillingPeriod,
   type PaymentDoc,
 } from '@smtp-saas/shared';
+import { awardReferralCommission } from '../referrals/commissions.js';
 
 /**
  * Credit a paid Razorpay order: record the payment and grant (or extend) its plan
@@ -61,6 +62,19 @@ export async function fulfillOrder(
     { _id: claimed.organizationId },
     { $set: { planKey: claimed.planKey } },
   );
+
+  // Inside fulfillOrder rather than in an onPaid hook: this runs for whichever caller
+  // claimed the payment, so a referrer is paid exactly once whether the checkout callback
+  // or the webhook got here first. A failure here must not unwind a credited plan, so it
+  // is logged and left for the operator rather than thrown.
+  try {
+    await awardReferralCommission(claimed);
+  } catch (err) {
+    logger.error(
+      { err, payment: String(claimed._id) },
+      'could not award referral commission for a fulfilled payment',
+    );
+  }
 
   logger.info(
     {

@@ -10,6 +10,7 @@ interface AuthState {
     password: string;
     name: string;
     organizationName?: string;
+    referralCode?: string;
   }) => Promise<void>;
   /** Sign in with an access token obtained elsewhere (e.g. from email verification). */
   startSession: (accessToken: string) => void;

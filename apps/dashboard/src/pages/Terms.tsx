@@ -225,6 +225,37 @@ const sections: DocSection[] = [
     ),
   },
   {
+    id: 'referrals',
+    title: 'Referral program',
+    body: (
+      <>
+        <p>
+          Every account has a referral link. When someone creates an account through your link and
+          pays for a plan, you earn a commission of <strong>10% of each payment they make</strong>,
+          for as long as they keep paying. Attribution is recorded when they sign up and is not
+          changed afterwards, so only the link used at signup counts.
+        </p>
+        <p>
+          Commission is held for <strong>14 days</strong> before it can be withdrawn. If the payment
+          behind it is refunded or reversed in that time, the commission is cancelled. Payouts are
+          made in Indian rupees to an Indian bank account, require your PAN, and are subject to a
+          minimum amount shown on your Refer &amp; earn page. Each payout is reviewed before the
+          transfer is made, and any tax we are required to withhold is deducted and reported against
+          the PAN you provide.
+        </p>
+        <p>
+          Commission is taxable income and declaring it is your responsibility. We may withhold or
+          cancel commission, and close a referral account, where we find self-referral, fake or
+          duplicate signups, purchased traffic, spam, misleading claims about the Service, bidding on
+          our name in paid search, or any other attempt to earn commission that is not a genuine
+          recommendation. We may change the commission rate, the hold period or the payout minimum
+          for future earnings, and will tell you before that takes effect; earnings already recorded
+          keep the terms they were earned under.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'changes',
     title: 'Changes to these terms',
     body: (

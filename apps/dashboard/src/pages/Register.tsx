@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
 import { apiErrorMessage } from '../api/client.js';
+import { clearReferralCode, readReferralCode } from '../referral.js';
 import { AuthCard, CheckInbox } from '../components/AuthCard.js';
 
 /** Remembered across the round trip through the verification email (often a new tab). */
@@ -29,7 +30,11 @@ export function Register() {
         email: form.email,
         password: form.password,
         organizationName: form.organizationName || undefined,
+        // Set if this visitor arrived through someone's share link. The server decides
+        // whether it earns anything; an unusable code never blocks the signup.
+        referralCode: readReferralCode(),
       });
+      clearReferralCode();
       try {
         if (plan) localStorage.setItem(PENDING_PLAN_KEY, plan);
       } catch {

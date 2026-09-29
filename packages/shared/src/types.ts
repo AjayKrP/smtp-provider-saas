@@ -27,6 +27,31 @@ export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 export const PAYMENT_STATUSES = ['created', 'paid'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+/**
+ * A referral commission's life: earned and inside the hold window (pending), withdrawable
+ * (available), inside a requested payout (claimed), transferred (paid), or undone because
+ * the payment behind it was refunded (reversed) or it was voided by an operator.
+ */
+export const COMMISSION_STATUSES = [
+  'pending',
+  'available',
+  'claimed',
+  'paid',
+  'reversed',
+  'cancelled',
+] as const;
+export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
+
+export const PAYOUT_STATUSES = [
+  'requested',
+  'approved',
+  'processing',
+  'paid',
+  'failed',
+  'cancelled',
+] as const;
+export type PayoutStatus = (typeof PAYOUT_STATUSES)[number];
+
 export const SUPPRESSION_REASONS = ['hard_bounce', 'complaint', 'manual'] as const;
 export type SuppressionReason = (typeof SUPPRESSION_REASONS)[number];
 

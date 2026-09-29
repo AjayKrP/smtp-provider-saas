@@ -19,6 +19,7 @@ import { consumeLinkToken, issueLinkToken, issuedRecently } from './linkTokens.j
 import { REFRESH_COOKIE, signAccessToken, signRefreshToken, verifyRefreshToken } from './tokens.js';
 import { auth, requireAuth } from './middleware.js';
 import { isAdminEmail, notifyAdminsOfSignup } from '../admin/notify.js';
+import { attributeSignup, referrerForCode } from '../referrals/commissions.js';
 
 export const authRouter: Router = Router();
 
@@ -30,6 +31,9 @@ const registerSchema = z.object({
   password,
   name: z.string().min(1).max(120),
   organizationName: z.string().min(1).max(120).optional(),
+  // A referral code, or the whole share URL it came from. Never required, and never a
+  // reason to reject a signup: see the attribution call below.
+  referralCode: z.string().trim().max(200).optional(),
 });
 const loginSchema = z.object({ email, password: z.string().min(1) });
 const emailOnlySchema = z.object({ email });
@@ -167,6 +171,18 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
     throw err;
   } finally {
     await session.endSession();
+  }
+
+  // Attribution is recorded at signup and never revisited, so a code that was mistyped,
+  // retired or self-referring simply earns nothing. It must never fail the registration:
+  // the person signing up did not choose the code and cannot fix it.
+  if (body.referralCode) {
+    try {
+      const referrerId = await referrerForCode(body.referralCode);
+      if (referrerId) await attributeSignup(String(orgId), referrerId);
+    } catch (err) {
+      logger.warn({ err }, 'could not attribute a referral code at signup');
+    }
   }
 
   const user = await UserModel.findById(userId);

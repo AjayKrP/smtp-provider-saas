@@ -1,7 +1,19 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
-import { OrganizationModel, PaymentModel, SubscriptionModel, UserModel } from '@smtp-saas/shared';
+import { z } from 'zod';
+import { Types } from 'mongoose';
+import {
+  OrganizationModel,
+  PaymentModel,
+  PayoutModel,
+  SubscriptionModel,
+  UserModel,
+} from '@smtp-saas/shared';
+import { env } from '../env.js';
 import { auth, requireAuth } from '../auth/middleware.js';
 import { ApiError } from '../http/errors.js';
+import { validateBody } from '../http/validate.js';
+import { razorpayxConfigured } from '../billing/razorpayx.js';
+import { failPayout, sendPayout, settlePayoutManually } from '../referrals/payouts.js';
 import { isAdminEmail } from './notify.js';
 
 export const adminRouter: Router = Router();
@@ -86,4 +98,78 @@ adminRouter.get('/stats', async (_req, res) => {
       };
     }),
   });
+});
+
+/**
+ * The payout queue: every referral payout an operator still has to act on, oldest first.
+ *
+ * Payouts are deliberately not automatic. Money leaving the account on a schedule nobody
+ * watches is how a referral program funds a fraud ring, so a person approves each one.
+ */
+adminRouter.get('/payouts', async (_req, res) => {
+  const payouts = await PayoutModel.find({
+    status: { $in: ['requested', 'approved', 'processing', 'failed'] },
+  })
+    .sort({ requestedAt: 1 })
+    .limit(100)
+    .lean();
+
+  const orgIds = payouts.map((p) => p.organizationId);
+  const orgs = await OrganizationModel.find(
+    { _id: { $in: orgIds } },
+    { name: 1, ownerUserId: 1 },
+  ).lean();
+  const owners = await UserModel.find(
+    { _id: { $in: orgs.map((o) => o.ownerUserId) } },
+    { email: 1 },
+  ).lean();
+  const emailByUser = new Map(owners.map((u) => [String(u._id), u.email]));
+  const orgById = new Map(orgs.map((o) => [String(o._id), o]));
+
+  res.json({
+    transfersAvailable: razorpayxConfigured,
+    withholdingPercent: env.REFERRAL_TDS_PERCENT,
+    payouts: payouts.map((p) => {
+      const org = orgById.get(String(p.organizationId));
+      return {
+        id: p._id,
+        organizationName: org?.name ?? null,
+        email: org ? (emailByUser.get(String(org.ownerUserId)) ?? null) : null,
+        grossAmount: p.grossAmount,
+        withheldAmount: p.withheldAmount,
+        netAmount: p.netAmount,
+        currency: p.currency,
+        status: p.status,
+        destination: p.destination,
+        failureReason: p.failureReason,
+        requestedAt: p.requestedAt,
+      };
+    }),
+  });
+});
+
+const payoutActionSchema = z.object({
+  action: z.enum(['send', 'settle', 'fail']),
+  /** Required for `settle`: the UPI/NEFT reference of the transfer already made. */
+  reference: z.string().trim().max(120).optional(),
+  reason: z.string().trim().max(200).optional(),
+});
+
+adminRouter.post('/payouts/:id', validateBody(payoutActionSchema), async (req, res) => {
+  const body = req.body as z.infer<typeof payoutActionSchema>;
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw ApiError.notFound('Payout not found');
+  const payout = await PayoutModel.findById(req.params.id);
+  if (!payout) throw ApiError.notFound('Payout not found');
+  if (payout.status === 'paid') throw ApiError.conflict('That payout has already been paid');
+
+  if (body.action === 'send') {
+    await sendPayout(payout);
+  } else if (body.action === 'settle') {
+    if (!body.reference) throw ApiError.badRequest('Record the transfer reference');
+    await settlePayoutManually(payout, body.reference);
+  } else {
+    await failPayout(payout, body.reason ?? 'rejected by an operator');
+  }
+
+  res.json({ id: payout._id, status: payout.status });
 });

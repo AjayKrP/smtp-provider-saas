@@ -9,6 +9,7 @@ const links: [string, string, IconName][] = [
   ['/credentials', 'SMTP credentials', 'key'],
   ['/activity', 'Activity', 'activity'],
   ['/billing', 'Billing', 'card'],
+  ['/referrals', 'Refer & earn', 'wallet'],
   ['/docs', 'Docs', 'code'],
 ];
 const adminLink: [string, string, IconName] = ['/admin', 'Admin', 'shield'];

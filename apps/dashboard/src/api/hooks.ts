@@ -242,3 +242,80 @@ export interface AdminStats {
 
 export const useAdminStats = () =>
   useQuery({ queryKey: ['admin', 'stats'], queryFn: () => get<AdminStats>('/admin/stats') });
+
+export interface ReferralSummary {
+  code: string;
+  shareUrl: string;
+  terms: {
+    percent: number;
+    holdDays: number;
+    minimumPayout: number;
+    withholdingPercent: number;
+    currency: string;
+  };
+  stats: { referred: number; paying: number };
+  earnings: {
+    pending: number;
+    available: number;
+    claimed: number;
+    paid: number;
+    reversed: number;
+    lifetime: number;
+    currency: string;
+  };
+  payoutAccount: {
+    holderName: string;
+    accountNumberLast4: string;
+    ifsc: string;
+    bankName: string | null;
+    panLast4: string | null;
+    confirmedAt: string | null;
+  } | null;
+  payouts: {
+    id: string;
+    grossAmount: number;
+    withheldAmount: number;
+    netAmount: number;
+    currency: string;
+    status: string;
+    failureReason: string | null;
+    requestedAt: string;
+    settledAt: string | null;
+  }[];
+  commissions: {
+    id: string;
+    amount: number;
+    currency: string;
+    percent: number;
+    status: string;
+    availableAt: string;
+    createdAt: string;
+  }[];
+}
+
+export const useReferrals = () =>
+  useQuery({ queryKey: ['referrals'], queryFn: () => get<ReferralSummary>('/referrals') });
+
+export interface PayoutAccountInput {
+  holderName: string;
+  accountNumber: string;
+  ifsc: string;
+  bankName?: string;
+  pan: string;
+}
+
+export function useSavePayoutAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PayoutAccountInput) => api.put('/referrals/payout-account', input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
+  });
+}
+
+export function useRequestPayout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post('/referrals/payouts'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
+  });
+}
