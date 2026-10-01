@@ -1717,3 +1717,34 @@ code.hljs {
 .showcase-foot a:hover {
   color: var(--text);
 }
+
+/* Refer & earn band on the landing page. Quieter than .cta-band on purpose: it sits one
+   section above it, and two gradient bands competing for the same click reads as a sale. */
+.refer-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.refer-band h2 {
+  margin: 8px 0 6px;
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.refer-band p {
+  color: var(--muted);
+  max-width: 56ch;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .refer-band {
+    padding: 22px 20px;
+  }
+}

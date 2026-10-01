@@ -87,6 +87,9 @@ export function PublicLayout() {
             <Link to="/pricing" className="muted">
               Pricing
             </Link>
+            <Link to="/refer" className="muted">
+              Refer &amp; earn
+            </Link>
             <Link to="/terms" className="muted">
               Terms
             </Link>

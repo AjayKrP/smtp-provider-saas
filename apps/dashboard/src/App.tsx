@@ -27,6 +27,7 @@ import { Activity } from './pages/Activity.js';
 import { Billing } from './pages/Billing.js';
 import { Admin } from './pages/Admin.js';
 import { Referrals } from './pages/Referrals.js';
+import { Refer } from './pages/Refer.js';
 import { ReferralLanding } from './pages/ReferralLanding.js';
 
 /**
@@ -35,6 +36,7 @@ import { ReferralLanding } from './pages/ReferralLanding.js';
  */
 const guideRoutes = [
   <Route key="prompt" path="/prompt" element={<Prompt />} />,
+  <Route key="refer" path="/refer" element={<Refer />} />,
   <Route key="guides" path="/guides" element={<GuidesIndex />} />,
   <Route key="supabase" path="/guides/supabase-smtp-settings" element={<SupabaseSmtp />} />,
   <Route key="lovable" path="/guides/send-email-from-lovable" element={<LovableEmail />} />,

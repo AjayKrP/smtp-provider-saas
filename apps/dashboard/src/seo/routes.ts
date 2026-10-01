@@ -158,6 +158,14 @@ export const SEO_ROUTES: SeoRoute[] = [
     changefreq: 'monthly',
   },
   {
+    path: '/refer',
+    title: 'Refer & Earn \u2014 10% Recurring Commission | Email4VibeCoder',
+    description:
+      'Recommend Email4VibeCoder and earn 10% of every payment your referrals make, for as long as they stay. Paid in rupees to an Indian bank account, no application needed.',
+    priority: '0.7',
+    changefreq: 'monthly',
+  },
+  {
     path: '/guides',
     title: 'Email Guides for Developers — Email4VibeCoder',
     description:

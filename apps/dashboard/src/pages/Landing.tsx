@@ -67,7 +67,9 @@ const STEPS = [
 
 type Tab = 'prompt' | 'env' | 'node' | 'python';
 
-function snippets(host: string): Record<Tab, { label: string; file: string; lang: CodeLang; code: string }> {
+function snippets(
+  host: string,
+): Record<Tab, { label: string; file: string; lang: CodeLang; code: string }> {
   return {
     prompt: {
       label: 'AI prompt',
@@ -170,6 +172,7 @@ export function Landing() {
   // Placeholder only until /config loads; the site and the mail server are different hosts.
   const host = usePublicConfig().data?.smtpHost ?? 'smtp.email4vibecoder.com';
   const { data: plans } = usePlans();
+  const referralPercent = usePublicConfig().data?.referral?.percent ?? 10;
   // Quote the cheapest paid plan straight from the synced prices, never a literal.
   const cheapest = plans
     ?.filter((p) => p.price)
@@ -259,6 +262,23 @@ export function Landing() {
       </section>
 
       <PricingSection id="pricing" />
+
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="refer-band">
+          <div>
+            <span className="eyebrow">Refer &amp; earn</span>
+            <h2>Earn {referralPercent}% of every payment you send our way</h2>
+            <p>
+              Share your link with anyone who needs email for their app. When they pay, you earn{' '}
+              {referralPercent}% of that payment — and of every payment they make after it, for as
+              long as they stay. Paid out in rupees to your bank account.
+            </p>
+          </div>
+          <Link to="/refer" className="btn lg">
+            How it works <Icon name="arrow" />
+          </Link>
+        </div>
+      </section>
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="cta-band">

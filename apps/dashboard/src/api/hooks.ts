@@ -86,6 +86,8 @@ export interface PublicConfig {
   smtpHost: string;
   smtpPorts: { starttls: number; tls: number };
   supportEmail: string;
+  /** Referral program terms, as the server enforces them. */
+  referral: { percent: number; holdDays: number; minimumPayout: number; currency: string };
 }
 
 /** Public settings; safe to fetch signed out. Cached for the session. */

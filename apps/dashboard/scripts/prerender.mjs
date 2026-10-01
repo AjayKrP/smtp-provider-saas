@@ -186,7 +186,7 @@ function llmsIndex(entries) {
     group('Setup', ['/docs', '/prompt']),
     group('Guides', ['/guides']),
     group('Comparisons', ['/compare']),
-    group('Service', ['/pricing', '/terms', '/privacy']),
+    group('Service', ['/pricing', '/refer', '/terms', '/privacy']),
   ].filter(Boolean);
 
   return [...head, ...sections].join('\n');

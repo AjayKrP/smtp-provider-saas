@@ -16,5 +16,14 @@ configRouter.get('/', (_req, res) => {
     smtpHost,
     smtpPorts: { starttls: 587, tls: 465 },
     supportEmail: mailSender().supportEmail,
+    // The referral terms are advertised on public pages, so they are served from the
+    // same config the program enforces. A literal in the marketing copy would be a
+    // second source of truth, and the one that goes stale.
+    referral: {
+      percent: env.REFERRAL_COMMISSION_PERCENT,
+      holdDays: env.REFERRAL_HOLD_DAYS,
+      minimumPayout: env.REFERRAL_MIN_PAYOUT,
+      currency: 'INR',
+    },
   });
 });
