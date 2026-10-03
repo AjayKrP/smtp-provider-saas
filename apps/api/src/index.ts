@@ -1,6 +1,7 @@
 import { connectMongo, disconnectMongo, logger } from '@smtp-saas/shared';
 import { env } from './env.js';
 import { createApp } from './app.js';
+import { googleSignInConfigured } from './auth/google.js';
 import { syncPlanCatalog } from './plans/catalog.js';
 import { grandfatherVerifiedEmails } from './auth/grandfather.js';
 
@@ -17,7 +18,21 @@ async function main(): Promise<void> {
 
   const app = createApp();
   const server = app.listen(env.API_PORT, () => {
-    logger.info({ port: env.API_PORT, adminEmails: env.ADMIN_EMAILS.length }, 'api listening');
+    // Optional integrations are reported at boot so a missing env var shows up in the
+    // log rather than as a feature that quietly is not there. An env_file change only
+    // reaches the process when the container is recreated, which is exactly the kind of
+    // thing this line makes obvious.
+    logger.info(
+      {
+        port: env.API_PORT,
+        adminEmails: env.ADMIN_EMAILS.length,
+        googleSignIn: googleSignInConfigured,
+        razorpay: !!env.RAZORPAY_KEY_ID,
+        referralCommissionPercent: env.REFERRAL_COMMISSION_PERCENT,
+        referralWithholdingPercent: env.REFERRAL_TDS_PERCENT,
+      },
+      'api listening',
+    );
   });
 
   const shutdown = (signal: string) => {
