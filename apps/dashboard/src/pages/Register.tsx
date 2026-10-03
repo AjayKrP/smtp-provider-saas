@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext.js';
 import { apiErrorMessage } from '../api/client.js';
 import { clearReferralCode, readReferralCode } from '../referral.js';
 import { AuthCard, CheckInbox } from '../components/AuthCard.js';
+import { GoogleSignIn } from '../components/GoogleSignIn.js';
 
 /** Remembered across the round trip through the verification email (often a new tab). */
 export const PENDING_PLAN_KEY = 'smtp_saas_pending_plan';
@@ -107,10 +108,11 @@ export function Register() {
           By creating an account you agree to our <Link to="/terms">Terms of Service</Link> and{' '}
           <Link to="/privacy">Privacy Policy</Link>.
         </p>
-        <p className="foot">
-          Already have an account? <Link to="/login">Sign in</Link>
-        </p>
       </form>
+      <GoogleSignIn text="signup_with" />
+      <p className="foot">
+        Already have an account? <Link to="/login">Sign in</Link>
+      </p>
     </AuthCard>
   );
 }

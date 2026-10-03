@@ -1764,3 +1764,29 @@ code.hljs {
   font-size: 12.5px;
   word-break: break-all;
 }
+
+/* Google sign-in. The button itself is an iframe Google renders and controls, so it
+   cannot follow our theme — all we style is the separator and the spacing around it. */
+.google-signin {
+  margin-top: 18px;
+}
+.google-signin .divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.google-signin .divider::before,
+.google-signin .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.google-button {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}

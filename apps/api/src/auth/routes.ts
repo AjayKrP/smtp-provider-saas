@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 import {
@@ -20,8 +21,15 @@ import { REFRESH_COOKIE, signAccessToken, signRefreshToken, verifyRefreshToken }
 import { auth, requireAuth } from './middleware.js';
 import { isAdminEmail, notifyAdminsOfSignup } from '../admin/notify.js';
 import { attributeSignup, referrerForCode } from '../referrals/commissions.js';
+import { verifyGoogleCredential } from './google.js';
 
 export const authRouter: Router = Router();
+
+/**
+ * Hashed once at startup and verified against when an account has no password, so a
+ * Google-only account cannot be identified by how fast the login endpoint answers.
+ */
+const DUMMY_PASSWORD_HASH = hashPassword(randomBytes(24).toString('hex'));
 
 const email = z.string().trim().toLowerCase().email();
 const password = z.string().min(10).max(200);
@@ -36,6 +44,10 @@ const registerSchema = z.object({
   referralCode: z.string().trim().max(200).optional(),
 });
 const loginSchema = z.object({ email, password: z.string().min(1) });
+const googleSchema = z.object({
+  credential: z.string().min(1).max(8192),
+  referralCode: z.string().trim().max(200).optional(),
+});
 const emailOnlySchema = z.object({ email });
 const tokenSchema = z.object({ token: z.string().min(1).max(200) });
 const resetSchema = z.object({ token: z.string().min(1).max(200), password });
@@ -194,10 +206,124 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res) => {
   res.status(201).json(pending);
 });
 
+/**
+ * Sign in (or sign up) with a Google ID token from Google Identity Services.
+ *
+ * Three cases, in order:
+ *
+ *  1. The Google identity is already linked — sign in.
+ *  2. An account exists with that email — link it, but ONLY if Google asserts the
+ *     address is verified. Linking on an unverified address would let anyone who can
+ *     create a Google account claiming an email take over the matching account here,
+ *     which is the one real attack this endpoint has to refuse.
+ *  3. Nobody has that email — create the account, already verified, because a
+ *     Google-asserted address is better evidence than a link we email to it.
+ *
+ * Case 3 also means these signups never depend on a verification email arriving, which
+ * is a real advantage while the sending domain's reputation is young.
+ */
+authRouter.post('/google', validateBody(googleSchema), async (req, res) => {
+  const body = req.body as z.infer<typeof googleSchema>;
+  const identity = await verifyGoogleCredential(body.credential);
+
+  let user = await UserModel.findOne({ googleSub: identity.sub });
+
+  if (!user) {
+    const existing = await UserModel.findOne({ email: identity.email });
+    if (existing) {
+      if (!identity.emailVerified) {
+        throw ApiError.forbidden(
+          'Google has not verified that email address, so it cannot be linked to an existing account.',
+        );
+      }
+      existing.googleSub = identity.sub;
+      // Someone whose verification email went to spam can get in this way: Google has
+      // just proved they own the address, which is what the emailed link was for.
+      existing.emailVerifiedAt ??= new Date();
+      await existing.save();
+      user = existing;
+    }
+  }
+
+  if (!user) {
+    if (!identity.emailVerified) {
+      throw ApiError.forbidden('Google has not verified that email address.');
+    }
+
+    const orgId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await OrganizationModel.create(
+          [
+            {
+              _id: orgId,
+              name: `${identity.name}'s workspace`,
+              ownerUserId: userId,
+              planKey: 'free',
+            },
+          ],
+          { session },
+        );
+        await UserModel.create(
+          [
+            {
+              _id: userId,
+              email: identity.email,
+              name: identity.name,
+              googleSub: identity.sub,
+              organizationId: orgId,
+              // Google vouched for the address; there is nothing left to confirm.
+              emailVerifiedAt: new Date(),
+            },
+          ],
+          { session },
+        );
+      });
+    } catch (err) {
+      // Lost a race with a concurrent sign-in for the same identity: use the winner.
+      if ((err as { code?: number }).code === 11000) {
+        user = await UserModel.findOne({ googleSub: identity.sub });
+      }
+      if (!user) throw err;
+    } finally {
+      await session.endSession();
+    }
+
+    if (!user) {
+      user = await UserModel.findById(userId);
+      if (body.referralCode) {
+        try {
+          const referrerId = await referrerForCode(body.referralCode);
+          if (referrerId) await attributeSignup(String(orgId), referrerId);
+        } catch (err) {
+          logger.warn({ err }, 'could not attribute a referral code at google signup');
+        }
+      }
+      if (user) sendInBackground(notifyAdminsOfSignup(user));
+    }
+  }
+
+  if (!user) throw ApiError.unauthorized('Could not complete that sign-in');
+
+  res.json({
+    ...issueSession(res, user),
+    user: { id: user._id, email: user.email, name: user.name },
+  });
+});
+
 authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   const body = req.body as z.infer<typeof loginSchema>;
   const user = await UserModel.findOne({ email: body.email });
-  if (!user || !(await verifyPassword(user.passwordHash, body.password))) {
+  // An account created through Google has no password hash. Verify against a dummy hash
+  // in that case so the reply takes the same time either way — otherwise the response
+  // speed alone would tell an attacker which accounts are Google-only. The error stays
+  // deliberately generic; the login page explains the Google option to everyone rather
+  // than confirming it for one address.
+  const hash = user?.passwordHash ?? (await DUMMY_PASSWORD_HASH);
+  const passwordOk = await verifyPassword(hash, body.password);
+  if (!user || !user.passwordHash || !passwordOk) {
     throw ApiError.unauthorized('Invalid email or password');
   }
   // Checked only after the password, so this never reveals which emails are registered.

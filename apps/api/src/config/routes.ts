@@ -16,6 +16,10 @@ configRouter.get('/', (_req, res) => {
     smtpHost,
     smtpPorts: { starttls: 587, tls: 465 },
     supportEmail: mailSender().supportEmail,
+    // The Google client id is public by design — it ships to every browser that renders
+    // the sign-in button. Served here rather than baked into the bundle so enabling it
+    // is an env change, not a rebuild. Null means the button simply does not render.
+    googleClientId: env.GOOGLE_CLIENT_ID ?? null,
     // The referral terms are advertised on public pages, so they are served from the
     // same config the program enforces. A literal in the marketing copy would be a
     // second source of truth, and the one that goes stale.

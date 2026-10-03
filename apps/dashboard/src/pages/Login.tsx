@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.js';
 import { apiErrorCode, apiErrorMessage } from '../api/client.js';
 import { AuthCard, CheckInbox } from '../components/AuthCard.js';
+import { GoogleSignIn } from '../components/GoogleSignIn.js';
 
 export function Login() {
   const { login } = useAuth();
@@ -83,10 +84,15 @@ export function Login() {
         <button className="primary block" style={{ marginTop: 20 }} disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="foot">
-          No account? <Link to="/register">Create one</Link>
-        </p>
       </form>
+      {/*
+        Outside the form: it is not a submit control, and inside a <form> Google's iframe
+        would sit in the tab order between the password field and the submit button.
+      */}
+      <GoogleSignIn text="signin_with" />
+      <p className="foot">
+        No account? <Link to="/register">Create one</Link>
+      </p>
     </AuthCard>
   );
 }

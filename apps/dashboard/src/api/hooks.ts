@@ -86,6 +86,8 @@ export interface PublicConfig {
   smtpHost: string;
   smtpPorts: { starttls: number; tls: number };
   supportEmail: string;
+  /** Google OAuth client id, or null when Google sign-in is not configured. */
+  googleClientId: string | null;
   /** Referral program terms, as the server enforces them. */
   referral: { percent: number; holdDays: number; minimumPayout: number; currency: string };
 }

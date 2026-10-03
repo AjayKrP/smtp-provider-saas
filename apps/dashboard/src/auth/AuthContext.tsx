@@ -12,6 +12,12 @@ interface AuthState {
     organizationName?: string;
     referralCode?: string;
   }) => Promise<void>;
+  /**
+   * Exchange a Google ID token for a session. Unlike register(), this signs the person in
+   * immediately: Google has already vouched for the address, so there is nothing to
+   * confirm by email.
+   */
+  signInWithGoogle: (credential: string, referralCode?: string) => Promise<void>;
   /** Sign in with an access token obtained elsewhere (e.g. from email verification). */
   startSession: (accessToken: string) => void;
   logout: () => Promise<void>;
@@ -54,6 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await api.post('/auth/register', input);
   }, []);
 
+  const signInWithGoogle = useCallback<AuthState['signInWithGoogle']>(
+    async (credential, referralCode) => {
+      const { data } = await api.post<{ accessToken: string }>('/auth/google', {
+        credential,
+        referralCode,
+      });
+      applyToken(data.accessToken);
+    },
+    [applyToken],
+  );
+
   const logout = useCallback(async () => {
     await api.post('/auth/logout').catch(() => undefined);
     setAccessToken(null);
@@ -62,8 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [qc]);
 
   const value = useMemo<AuthState>(
-    () => ({ authenticated, login, register, startSession: applyToken, logout }),
-    [authenticated, login, register, applyToken, logout],
+    () => ({ authenticated, login, register, signInWithGoogle, startSession: applyToken, logout }),
+    [authenticated, login, register, signInWithGoogle, applyToken, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

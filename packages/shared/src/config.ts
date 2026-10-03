@@ -45,6 +45,10 @@ const apiSchema = sharedSchema.extend({
   SYSTEM_SMTP_PORT: z.coerce.number().int().positive().default(465),
   SYSTEM_SMTP_USER: z.string().optional(),
   SYSTEM_SMTP_PASS: z.string().optional(),
+  // Google Sign-In. The client id is public (it ships to the browser) and is served to
+  // the dashboard through /config. Unset: the Google button does not render and the
+  // endpoint answers 503, so the feature is simply absent rather than broken.
+  GOOGLE_CLIENT_ID: z.string().optional(),
   // Referral program. The percentage a referrer earns of every payment made by an
   // organization they referred, for as long as that organization keeps paying.
   REFERRAL_COMMISSION_PERCENT: z.coerce.number().min(0).max(100).default(10),
