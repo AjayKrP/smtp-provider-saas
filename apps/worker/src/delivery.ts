@@ -10,10 +10,7 @@ export interface RecipientResult {
   mxHost?: string;
 }
 
-function fanOut(
-  recipients: string[],
-  result: Omit<RecipientResult, 'address'>,
-): RecipientResult[] {
+function fanOut(recipients: string[], result: Omit<RecipientResult, 'address'>): RecipientResult[] {
   return recipients.map((address) => ({ address, ...result }));
 }
 
@@ -26,21 +23,30 @@ export async function deliverToDomain(opts: {
 }): Promise<RecipientResult[]> {
   const targets = await resolveMxTargets(opts.domain);
   if (targets.length === 0) {
-    return fanOut(opts.recipients, { outcome: 'deferred', response: 'no MX or A records for domain' });
+    // Deferred rather than bounced: an IPv6-only recipient is deliverable in principle,
+    // just not by us, and a bounce would tell the sender something untrue.
+    return fanOut(opts.recipients, {
+      outcome: 'deferred',
+      response: 'no IPv4 MX or A records for domain',
+    });
   }
 
   let lastError: unknown;
   for (const target of targets) {
     const transport = nodemailer.createTransport({
-      host: target.host,
+      // The resolved IPv4 address, not the hostname: see resolveMxTargets for why the
+      // address family is chosen here rather than left to Node.
+      host: target.address,
       port: target.port,
       secure: false,
       name: heloName,
       connectionTimeout: 30_000,
       greetingTimeout: 30_000,
       socketTimeout: 120_000,
-      // Opportunistic STARTTLS; remote MX certs are frequently self-signed.
-      tls: { rejectUnauthorized: false },
+      // Opportunistic STARTTLS; remote MX certs are frequently self-signed. `servername`
+      // has to be set explicitly because we connect by address — without it SNI carries
+      // an IP, and some MX hosts serve the wrong certificate or refuse the handshake.
+      tls: { rejectUnauthorized: false, servername: target.host },
     });
 
     try {
