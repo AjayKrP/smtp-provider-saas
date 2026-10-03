@@ -49,12 +49,17 @@ export function Login() {
 
   return (
     <AuthCard>
+      <h1>Welcome back</h1>
+      <p className="sub">Sign in to your account to continue.</p>
+      {params.get('reset') === '1' && (
+        <div className="notice ok">Your password was changed. Sign in with the new one.</div>
+      )}
+      {/*
+        Above the form and outside it: it is not a submit control, and inside a <form>
+        Google's iframe would sit in the tab order among the fields.
+      */}
+      <GoogleSignIn text="signin_with" />
       <form onSubmit={submit}>
-        <h1>Welcome back</h1>
-        <p className="sub">Sign in to your account to continue.</p>
-        {params.get('reset') === '1' && (
-          <div className="notice ok">Your password was changed. Sign in with the new one.</div>
-        )}
         <label htmlFor="email">Email</label>
         <input
           id="email"
@@ -85,11 +90,6 @@ export function Login() {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-      {/*
-        Outside the form: it is not a submit control, and inside a <form> Google's iframe
-        would sit in the tab order between the password field and the submit button.
-      */}
-      <GoogleSignIn text="signin_with" />
       <p className="foot">
         No account? <Link to="/register">Create one</Link>
       </p>

@@ -1767,16 +1767,25 @@ code.hljs {
 
 /* Google sign-in. The button itself is an iframe Google renders and controls, so it
    cannot follow our theme — all we style is the separator and the spacing around it. */
-.google-signin {
+.google-signin.above {
+  margin: 20px 0 0;
+}
+.google-signin.below {
   margin-top: 18px;
 }
 .google-signin .divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 14px;
   color: var(--muted);
   font-size: 12px;
+}
+/* The divider always sits between the two choices, so its margin follows the button. */
+.google-signin.above .divider {
+  margin: 18px 0 0;
+}
+.google-signin.below .divider {
+  margin: 0 0 14px;
 }
 .google-signin .divider::before,
 .google-signin .divider::after {

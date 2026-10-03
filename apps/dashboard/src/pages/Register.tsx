@@ -62,9 +62,11 @@ export function Register() {
 
   return (
     <AuthCard>
+      <h1>Create your account</h1>
+      <p className="sub">Free to start. No credit card required.</p>
+      {/* Above the form, as on the sign-in page, and outside it for the same reason. */}
+      <GoogleSignIn text="signup_with" />
       <form onSubmit={submit}>
-        <h1>Create your account</h1>
-        <p className="sub">Free to start. No credit card required.</p>
         <label htmlFor="name">Name</label>
         <input
           id="name"
@@ -109,7 +111,6 @@ export function Register() {
           <Link to="/privacy">Privacy Policy</Link>.
         </p>
       </form>
-      <GoogleSignIn text="signup_with" />
       <p className="foot">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>

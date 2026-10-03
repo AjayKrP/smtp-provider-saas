@@ -69,8 +69,15 @@ function loadGoogleScript(): Promise<void> {
  */
 export function GoogleSignIn({
   text = 'continue_with',
+  placement = 'above',
 }: {
   text?: 'signin_with' | 'signup_with' | 'continue_with';
+  /**
+   * Where this sits relative to the email form. It only moves the "or" divider, which
+   * belongs between the two choices — so it follows the button when the button is first,
+   * and precedes it when the form is.
+   */
+  placement?: 'above' | 'below';
 }) {
   const clientId = usePublicConfig().data?.googleClientId;
   const { signInWithGoogle } = useAuth();
@@ -127,14 +134,19 @@ export function GoogleSignIn({
 
   if (!clientId) return null;
 
+  const divider = (
+    <div className="divider">
+      <span>or</span>
+    </div>
+  );
+
   return (
-    <div className="google-signin">
-      <div className="divider">
-        <span>or</span>
-      </div>
+    <div className={`google-signin ${placement}`}>
+      {placement === 'below' && divider}
       <div ref={holder} className="google-button" aria-busy={busy} />
       {busy && <p className="muted small">Signing you in…</p>}
       {error && <p className="error">{error}</p>}
+      {placement === 'above' && divider}
     </div>
   );
 }
