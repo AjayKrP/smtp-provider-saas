@@ -26,6 +26,10 @@ async function main(): Promise<void> {
       {
         port: env.API_PORT,
         adminEmails: env.ADMIN_EMAILS.length,
+        // The session timeout, in the log for the same reason as the rest of this line:
+        // .env.production said 3600 while the running container still had 2592000 from an
+        // earlier recreate, and nothing anywhere would have shown that.
+        sessionIdleTimeoutSeconds: env.JWT_REFRESH_TTL,
         googleSignIn: googleSignInConfigured,
         razorpay: !!env.RAZORPAY_KEY_ID,
         referralCommissionPercent: env.REFERRAL_COMMISSION_PERCENT,
