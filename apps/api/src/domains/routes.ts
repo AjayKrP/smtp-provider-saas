@@ -12,7 +12,7 @@ import { ApiError } from '../http/errors.js';
 import { validateBody } from '../http/validate.js';
 import { auth, requireAuth } from '../auth/middleware.js';
 import { orgPlanLimits } from '../plans/limits.js';
-import { dnsRecordsFor, verifyDomainDns } from './dns.js';
+import { detectDnsProvider, dnsRecordsFor, verifyDomainDns } from './dns.js';
 
 export const domainsRouter: Router = Router();
 domainsRouter.use(requireAuth);
@@ -36,6 +36,10 @@ function present(d: DomainDoc | (DomainDoc & object)) {
     verifiedAt: d.verifiedAt,
     lastCheckedAt: d.lastCheckedAt,
     dnsRecords: dnsRecordsFor(d),
+    // The id alone: the dashboard holds the instructions for each one, and the
+    // nameservers let it name an unrecognised host instead of saying nothing.
+    dnsProvider: d.dnsProvider ?? null,
+    nameservers: d.nameservers ?? [],
   };
 }
 
@@ -60,6 +64,9 @@ domainsRouter.post('/', validateBody(createSchema), async (req, res) => {
   }
 
   const { privateKey, publicKey } = generateDkimKeyPair();
+  // Looked up before the response so the setup instructions are already tailored on the
+  // screen that appears next. One NS query, and it fails quietly.
+  const detected = await detectDnsProvider(domain);
   const created = await DomainModel.create({
     organizationId,
     domain,
@@ -67,6 +74,8 @@ domainsRouter.post('/', validateBody(createSchema), async (req, res) => {
     dkimPrivateKeyEnc: encryptString(privateKey),
     dkimPublicKey: publicKey,
     status: 'pending',
+    dnsProvider: detected.provider?.id ?? null,
+    nameservers: detected.nameservers,
   });
   res.status(201).json(present(created));
 });
@@ -86,8 +95,17 @@ domainsRouter.get('/:id', async (req, res) => {
 
 domainsRouter.post('/:id/verify', async (req, res) => {
   const doc = await loadOwnedDomain(req);
-  const result = await verifyDomainDns(doc);
+  const [result, detected] = await Promise.all([
+    verifyDomainDns(doc),
+    detectDnsProvider(doc.domain),
+  ]);
 
+  // Re-detected on every check: someone who moves provider mid-setup would otherwise keep
+  // being shown instructions for the host they just left.
+  if (detected.nameservers.length > 0) {
+    doc.dnsProvider = detected.provider?.id ?? null;
+    doc.nameservers = detected.nameservers;
+  }
   doc.dkimVerified = result.dkimVerified;
   doc.spfVerified = result.spfVerified;
   doc.lastCheckedAt = new Date();

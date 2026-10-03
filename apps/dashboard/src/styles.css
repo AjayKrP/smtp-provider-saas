@@ -1799,3 +1799,20 @@ code.hljs {
   justify-content: center;
   min-height: 40px;
 }
+
+/* Per-provider DNS instructions above the records table. */
+.provider-help {
+  padding: 16px 20px 4px;
+  font-size: 14px;
+}
+.provider-help p {
+  margin: 0 0 8px;
+}
+.provider-help ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  color: var(--muted);
+}
+.provider-help li {
+  margin-bottom: 5px;
+}

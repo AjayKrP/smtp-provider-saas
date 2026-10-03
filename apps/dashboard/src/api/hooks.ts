@@ -34,6 +34,10 @@ export interface DnsRecord {
 export interface Domain {
   id: string;
   domain: string;
+  /** DNS host detected from the nameservers, or null when unrecognised. */
+  dnsProvider: string | null;
+  /** The domain's actual nameservers, so an unrecognised host can still be named. */
+  nameservers: string[];
   status: 'pending' | 'verified' | 'failed';
   dkimSelector: string;
   dkimVerified: boolean;

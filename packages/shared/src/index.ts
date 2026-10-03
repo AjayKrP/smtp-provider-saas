@@ -11,4 +11,5 @@ export * from './usage.js';
 export * from './planLimits.js';
 export * from './billingPeriod.js';
 export * from './referrals.js';
+export * from './dnsProviders.js';
 export * from './models/index.js';

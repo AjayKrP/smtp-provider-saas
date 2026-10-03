@@ -1,5 +1,10 @@
 import { Resolver } from 'node:dns/promises';
-import { dkimPublicKeyToDnsValue, type DomainDoc } from '@smtp-saas/shared';
+import {
+  dkimPublicKeyToDnsValue,
+  providerFromNameservers,
+  type DnsProvider,
+  type DomainDoc,
+} from '@smtp-saas/shared';
 import { env } from '../env.js';
 
 export interface DnsRecord {
@@ -56,6 +61,27 @@ async function txtRecords(host: string): Promise<string[]> {
     return chunks.map((parts) => parts.join(''));
   } catch {
     return [];
+  }
+}
+
+/**
+ * Who hosts this domain's DNS, read from its nameservers.
+ *
+ * The nameservers are returned too, so an unrecognised host can still be shown to the
+ * customer ("your DNS is at ns1.example.net") and so we can see what to add to the
+ * signature table when someone asks why their provider is not covered.
+ *
+ * Failure is not an error: a domain whose NS lookup fails is usually one that was
+ * registered minutes ago, and the generic instructions are still correct.
+ */
+export async function detectDnsProvider(
+  domain: string,
+): Promise<{ provider: DnsProvider | null; nameservers: string[] }> {
+  try {
+    const nameservers = await resolver().resolveNs(domain);
+    return { provider: providerFromNameservers(nameservers), nameservers };
+  } catch {
+    return { provider: null, nameservers: [] };
   }
 }
 

@@ -8,8 +8,84 @@ import {
 } from '../api/hooks.js';
 import { apiErrorMessage } from '../api/client.js';
 import { CopyButton, Empty, Icon, PageHeader, StatusBadge, when } from '../components/bits.js';
+import {
+  NAME_FIELD_HELP,
+  PROVIDER_GUIDES,
+  hostForProvider,
+  type ProviderGuide,
+} from '../content/dnsProviders.js';
+
+/**
+ * Instructions for the DNS host this domain actually sits on, detected from its
+ * nameservers by the API. The point is not the menu path: it is that the Host column
+ * below can then show the exact string this provider's form expects, which is where most
+ * setups go wrong.
+ */
+function ProviderHelp({ domain, guide }: { domain: Domain; guide?: ProviderGuide }) {
+  const nameserver = domain.nameservers[0];
+
+  return (
+    <div className="provider-help">
+      {guide ? (
+        <>
+          <p>
+            <strong>Your DNS is hosted at {providerName(domain.dnsProvider)}.</strong> {guide.path}.
+          </p>
+          {guide.notes.length > 0 && (
+            <ul>
+              {guide.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <p>
+          {nameserver ? (
+            <>
+              <strong>Your DNS is answered by {nameserver}.</strong> We do not have step-by-step
+              instructions for that host, so the records below are shown in full.
+            </>
+          ) : (
+            <>Add these records wherever your domain&apos;s DNS is managed.</>
+          )}
+        </p>
+      )}
+      <p className="muted small">{NAME_FIELD_HELP}</p>
+    </div>
+  );
+}
+
+/** Display name for a detected provider id, for the one line that needs it. */
+function providerName(id: string | null): string {
+  const names: Record<string, string> = {
+    cloudflare: 'Cloudflare',
+    godaddy: 'GoDaddy',
+    namecheap: 'Namecheap',
+    route53: 'Amazon Route 53',
+    digitalocean: 'DigitalOcean',
+    vercel: 'Vercel',
+    netlify: 'Netlify or NS1',
+    hostinger: 'Hostinger',
+    resellerclub: 'BigRock or another ResellerClub host',
+    hostgator: 'HostGator',
+    azure: 'Azure DNS',
+    googlecloud: 'Google Cloud DNS',
+    squarespace: 'Squarespace',
+    milesweb: 'MilesWeb',
+    porkbun: 'Porkbun',
+    dnsimple: 'DNSimple',
+    namecom: 'Name.com',
+    bluehost: 'Bluehost',
+    gandi: 'Gandi',
+    zoho: 'Zoho',
+    alibaba: 'Alibaba Cloud',
+  };
+  return (id && names[id]) || 'your DNS provider';
+}
 
 function DnsTable({ domain }: { domain: Domain }) {
+  const guide = domain.dnsProvider ? PROVIDER_GUIDES[domain.dnsProvider] : undefined;
   return (
     <div className="table-wrap">
       <table>
@@ -29,8 +105,11 @@ function DnsTable({ domain }: { domain: Domain }) {
               </td>
               <td>
                 <div className="copy-field">
-                  <code>{r.host}</code>
-                  <CopyButton value={r.host} label="Copy host" />
+                  <code>{hostForProvider(r.host, domain.domain, guide?.nameField)}</code>
+                  <CopyButton
+                    value={hostForProvider(r.host, domain.domain, guide?.nameField)}
+                    label="Copy host"
+                  />
                 </div>
               </td>
               <td style={{ maxWidth: 420 }}>
@@ -79,6 +158,10 @@ function DomainCard({ domain }: { domain: Domain }) {
         </div>
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid var(--border)' }}>
+        <ProviderHelp
+          domain={domain}
+          guide={domain.dnsProvider ? PROVIDER_GUIDES[domain.dnsProvider] : undefined}
+        />
         <DnsTable domain={domain} />
       </div>
       <div
