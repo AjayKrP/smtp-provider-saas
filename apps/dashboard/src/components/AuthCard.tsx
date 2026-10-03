@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { api, apiErrorMessage } from '../api/client.js';
+import { usePublicConfig } from '../api/hooks.js';
 import { Icon } from './bits.js';
 
 /** Centered card for auth pages; the site header and footer come from PublicLayout. */
@@ -23,6 +24,8 @@ export function CheckInbox({
 }) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState('');
+  // The address the mail is actually sent From, so searching for it finds the message.
+  const senderAddress = usePublicConfig().data?.supportEmail ?? 'hello@email4vibecoder.com';
 
   async function resend() {
     setState('sending');
@@ -47,6 +50,22 @@ export function CheckInbox({
         the link is valid for 24 hours.
       </p>
       {children}
+
+      {/*
+        Prominent rather than a footnote under the button: login requires a verified
+        address, so a verification email sitting in spam is a signup that dies silently.
+        The "mark it as not spam" ask is not politeness — recipient engagement is the
+        strongest short-term signal a young sending domain has, so a reader who moves it
+        to their inbox measurably helps the next person's email arrive.
+      */}
+      <div className="banner spam-hint">
+        <div>
+          <strong>Not in your inbox?</strong> Check your spam or junk folder and search for{' '}
+          <code>{senderAddress}</code>. If you find it there, please mark it{' '}
+          <strong>Not spam</strong> — that helps the next email reach you properly.
+        </div>
+      </div>
+
       {error && <div className="error">{error}</div>}
       <button
         type="button"
@@ -58,10 +77,9 @@ export function CheckInbox({
         {state === 'sending'
           ? 'Sending…'
           : state === 'sent'
-            ? 'Email sent — check your inbox'
+            ? 'Email sent — check your inbox and spam folder'
             : 'Resend email'}
       </button>
-      <p className="foot">Can&apos;t find it? Check your spam folder.</p>
     </>
   );
 }

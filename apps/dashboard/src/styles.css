@@ -1748,3 +1748,19 @@ code.hljs {
     padding: 22px 20px;
   }
 }
+
+/* The spam-folder notice on the "check your inbox" screens. Left-aligned and allowed to
+   wrap: .banner is built for one short line with an action beside it, and this is a
+   sentence the reader has to actually follow. */
+.banner.spam-hint {
+  display: block;
+  text-align: left;
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+.banner.spam-hint code {
+  font-size: 12.5px;
+  word-break: break-all;
+}
