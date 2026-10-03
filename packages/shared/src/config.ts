@@ -25,8 +25,13 @@ const apiSchema = sharedSchema.extend({
   DASHBOARD_URL: z.string().url(),
   JWT_ACCESS_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
+  // Seconds an access token is valid. Short on purpose: it is swapped silently by the
+  // browser and is not what a user experiences as a session.
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
-  JWT_REFRESH_TTL: z.coerce.number().int().positive().default(2_592_000),
+  // Seconds of INACTIVITY before someone must sign in again — the real session timeout.
+  // /auth/refresh issues a fresh refresh cookie on every call, so this clock slides: an
+  // active session never expires and an idle one dies this long after its last request.
+  JWT_REFRESH_TTL: z.coerce.number().int().positive().default(3_600),
   // Razorpay. Optional so the API still boots without them; billing endpoints then
   // answer 503 and plan prices are simply not synced.
   RAZORPAY_KEY_ID: z.string().optional(),
